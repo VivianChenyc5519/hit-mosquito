@@ -125,12 +125,34 @@ func attempt_slap(hit_confirmed: bool) -> bool:
 			EndReason.MOSQUITO_DEAD
 		)
 		
-func attemp_bite(hit_confirmed: bool) -> bool:
+func attempt_bite(hit_confirmed: bool) -> bool:
 	if match_state != MatchState.PLAYING:
 		return false
-	if bite_cool_down_remaining > 0:
+	if bite_cooldown_remaining > 0.0:
 		return false
 	bite_resolved.emit(hit_confirmed)
-	if 
-		
+	if not hit_confirmed:
+		return true
+	human_hp -= 1
+	human_hp_changed.emit(
+		human_hp,
+		human_max_hp
+	)
+	if human_hp <= 0:
+		finish_match(
+			Winner.MOSQUITO,
+			EndReason.HUMAN_HP_DEPLETED
+		)
+
+		return true
+	bite_cooldown_remaining = bite_cooldown
+	human_stun_remaining = human_stun_duration
+	mosquito_boost_remaining = mosquito_boost_duration
+	human_stunned.emit(human_stun_duration)
+	mosquito_boost_started.emit(
+		mosquito_boost_duration
+	)
+	return true
+	
+			
 		
