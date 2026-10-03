@@ -34,9 +34,3 @@ tile_set = SubResource("TileSet_g2yis")
 [node name="Mosquito" parent="." unique_id=1176946089 instance=ExtResource("4_iywne")]
 
 [node name="Racket" parent="." unique_id=766657232 instance=ExtResource("5_p57ef")]
-[gd_scene format=3 uid="uid://d4b4k48as2msu"]
-
-[ext_resource type="Script" uid="uid://b08oi5q3x0nl5" path="res://scripts/game.gd" id="1_uwrxv"]
-
-[node name="Game" type="Node2D" unique_id=1323550540]
-script = ExtResource("1_uwrxv")
