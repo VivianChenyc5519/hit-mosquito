@@ -63,6 +63,7 @@ signal bite_resolved(hit: bool)
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	print("Match started now")
 	match_state = MatchState.PLAYING
 	winner = Winner.NONE
 	end_reason = EndReason.NONE
@@ -102,7 +103,7 @@ func update_status_effect(delta: float) -> void:
 	var human_was_stunned:= human_stun_remaining > 0.0
 	var mosquito_was_boosted:=mosquito_boost_remaining > 0.0
 	
-	human_stun_remaining = maxf(human_stun_duration - delta, 0.0)
+	human_stun_remaining = maxf(human_stun_remaining - delta, 0.0)
 	mosquito_boost_remaining = maxf(mosquito_boost_remaining - delta, 0.0)
 	
 	if human_was_stunned and human_stun_remaining <= 0.0:
@@ -110,12 +111,16 @@ func update_status_effect(delta: float) -> void:
 	if mosquito_was_boosted and mosquito_boost_remaining <= 0.0:
 		mosquito_boost_ended.emit()
 		
+		
 func attempt_slap(hit_confirmed: bool) -> bool:
 	if match_state != MatchState.PLAYING:
+		print("Not playing yet")
 		return false
 	if human_stun_remaining > 0.0:
+		print("Human still stunned. Cannot slap")
 		return false
 	if slap_cooldown_remaining > 0.0:
+		print("Slap cooling down..")
 		return false
 	slap_cooldown_remaining = slap_cooldown
 	slap_resolved.emit(hit_confirmed)
@@ -124,24 +129,29 @@ func attempt_slap(hit_confirmed: bool) -> bool:
 			Winner.HUMAN,
 			EndReason.MOSQUITO_DEAD
 		)
+	return true
 		
 func attempt_bite(hit_confirmed: bool) -> bool:
 	if match_state != MatchState.PLAYING:
+		print("Not playing")
 		return false
 	if bite_cooldown_remaining > 0.0:
+		print("Still cooling down")
 		return false
 	bite_resolved.emit(hit_confirmed)
 	if not hit_confirmed:
+		print("Missed hit")
 		return true
 	human_hp -= 1
 	human_hp_changed.emit(
 		human_hp,
 		human_max_hp
 	)
+	print("Human HP changing to ", human_hp)
 	if human_hp <= 0:
 		finish_match(
 			Winner.MOSQUITO,
-			EndReason.HUMAN_HP_DEPLETED
+			EndReason.HUMAN_DEAD
 		)
 
 		return true
@@ -153,6 +163,14 @@ func attempt_bite(hit_confirmed: bool) -> bool:
 		mosquito_boost_duration
 	)
 	return true
+	
+func finish_match(new_winner: Winner, reason: EndReason) -> void:
+	if match_state == MatchState.FINISHED:
+		return
+	match_state = MatchState.FINISHED
+	winner = new_winner
+	end_reason =  reason
+	match_ended.emit(winner, end_reason)
 	
 			
 		
