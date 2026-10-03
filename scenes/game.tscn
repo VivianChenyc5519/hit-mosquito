@@ -1,5 +1,6 @@
-[gd_scene format=3 uid="uid://c6jmhnucxwu24"]
+[gd_scene format=3 uid="uid://d4b4k48as2msu"]
 
-[node name="Human" type="CharacterBody2D" unique_id=696495070]
+[ext_resource type="Script" uid="uid://b08oi5q3x0nl5" path="res://scripts/game.gd" id="1_uwrxv"]
 
-[node name="RacketSprite" type="Sprite2D" parent="." unique_id=921630159]
+[node name="Game" type="Node2D" unique_id=1323550540]
+script = ExtResource("1_uwrxv")
