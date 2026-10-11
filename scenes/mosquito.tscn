@@ -128,16 +128,16 @@ animations = [{
 radius = 14.0
 
 [node name="Mosquito" type="CharacterBody2D" unique_id=1176946089]
+position = Vector2(50, 50)
+collision_layer = 2
 motion_mode = 1
 script = ExtResource("1_jn24c")
 
 [node name="MosquitoSprite" type="AnimatedSprite2D" parent="." unique_id=329005516]
-position = Vector2(43, 35)
 sprite_frames = SubResource("SpriteFrames_g2yis")
 animation = &"dead"
 frame_progress = 0.044030678
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1591447122]
 visible = false
-position = Vector2(43, 35)
 shape = SubResource("CircleShape2D_6ugr2")

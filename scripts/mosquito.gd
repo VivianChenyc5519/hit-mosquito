@@ -35,7 +35,6 @@ func _physics_process(_delta: float) -> void:
 func handle_movement() -> void:
 	if not input_enabled or is_dying or is_dead:
 		velocity = Vector2.ZERO
-		move_and_slide()
 		return
 
 	var direction: Vector2 = Input.get_vector(

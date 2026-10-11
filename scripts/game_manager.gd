@@ -26,7 +26,7 @@ enum EndReason {
 @export_category("Human")
 @export var human_max_hp: int = 4;
 @export var human_stun_duration: float = 1.5;
-@export var slap_cooldown: float = 4.0;
+@export var slap_cooldown: float = 1.0;
 
 @export_category("Mosquito") 
 @export var bite_cooldown: float = 8.0;

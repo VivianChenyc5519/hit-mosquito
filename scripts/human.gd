@@ -9,6 +9,9 @@ signal slap_requested
 # Racket_pivot controls the mouse rotation
 @onready var racket_pivot: Node2D = $RacketPivot
 @onready var racket_sprite: AnimatedSprite2D = $RacketSprite
+@onready var slap_area: Area2D = $RacketPivot/SlapArea
+@onready var slap_polygon: CollisionPolygon2D = $RacketPivot/SlapArea/CollisionPolygon2D
+
 
 func _ready() -> void:
 	racket_sprite.play("idle")
@@ -27,7 +30,6 @@ func _physics_process(_delta: float) -> void:
 func handle_movement() -> void:
 	if not input_enabled or is_stunned:
 		velocity = Vector2.ZERO
-		move_and_slide()
 		return
 
 	var direction := Input.get_vector(
@@ -99,3 +101,6 @@ func _on_racket_animation_finished() -> void:
 
 	elif racket_sprite.animation == "hit":
 		racket_sprite.play("idle")
+		
+func can_hit_target(target: Node2D) -> bool:
+	return slap_area.overlaps_body(target)
