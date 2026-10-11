@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ogbjfi8jnnew"]
 
 [ext_resource type="Texture2D" uid="uid://dq1e1w7vuu6rh" path="res://assets/m_death.png" id="1_8fycp"]
+[ext_resource type="Script" uid="uid://op2o7phrer2t" path="res://scripts/mosquito.gd" id="1_jn24c"]
 [ext_resource type="Texture2D" uid="uid://ltnrmp3rfr5j" path="res://assets/m_fly.png" id="2_jn24c"]
 [ext_resource type="Texture2D" uid="uid://bwgph45m3pyqf" path="res://assets/m_rest.png" id="3_0q40q"]
 
@@ -128,11 +129,13 @@ radius = 14.0
 
 [node name="Mosquito" type="CharacterBody2D" unique_id=1176946089]
 motion_mode = 1
+script = ExtResource("1_jn24c")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=329005516]
+[node name="MosquitoSprite" type="AnimatedSprite2D" parent="." unique_id=329005516]
 position = Vector2(43, 35)
 sprite_frames = SubResource("SpriteFrames_g2yis")
 animation = &"dead"
+frame_progress = 0.044030678
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1591447122]
 visible = false

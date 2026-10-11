@@ -3,6 +3,9 @@
 [ext_resource type="Script" uid="uid://bj3e1um2igvry" path="res://scripts/human.gd" id="1_fvi3j"]
 [ext_resource type="Texture2D" uid="uid://btlke47w2aeos" path="res://assets/r_hit.png" id="1_p3awx"]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_6ugr2"]
+radius = 16.0
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_fvi3j"]
 atlas = ExtResource("1_p3awx")
 region = Rect2(0, 0, 64, 64)
@@ -98,17 +101,8 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_6ugr2"]
-radius = 16.0
-
 [node name="Racket" type="CharacterBody2D" unique_id=766657232]
 script = ExtResource("1_fvi3j")
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1987754250]
-position = Vector2(61, 51)
-sprite_frames = SubResource("SpriteFrames_g2yis")
-animation = &"idle"
-frame_progress = 0.33862698
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=890618767]
 position = Vector2(61, 36)
@@ -116,4 +110,13 @@ shape = SubResource("CircleShape2D_6ugr2")
 
 [node name="RacketPivot" type="Node2D" parent="." unique_id=1084132392]
 
-[node name="RacketSprite" type="Sprite2D" parent="RacketPivot" unique_id=1161267304]
+[node name="VisionCone" type="Polygon2D" parent="RacketPivot" unique_id=1808748755]
+position = Vector2(1, 0)
+color = Color(1, 1, 0.16470589, 1)
+polygon = PackedVector2Array(0, 0, 41, -31, 41, 32)
+
+[node name="RacketSprite" type="AnimatedSprite2D" parent="." unique_id=1987754250]
+position = Vector2(-3, 14)
+sprite_frames = SubResource("SpriteFrames_g2yis")
+animation = &"hit"
+frame_progress = 0.8381526

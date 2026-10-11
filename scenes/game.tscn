@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://dlm5mrf04o8i8" path="res://assets/tile_border_left.png" id="1_dinhu"]
 [ext_resource type="Texture2D" uid="uid://dgjbbhus0laao" path="res://assets/tile.png" id="1_lnu2h"]
+[ext_resource type="Script" uid="uid://b08oi5q3x0nl5" path="res://scripts/game.gd" id="1_trtic"]
 [ext_resource type="Texture2D" uid="uid://c3fngjcv2msi5" path="res://assets/tile_broken.png" id="2_lbhrr"]
 [ext_resource type="Texture2D" uid="uid://be7v3pxqhlc0r" path="res://assets/tile_border_down.png" id="3_iywne"]
 [ext_resource type="PackedScene" uid="uid://ogbjfi8jnnew" path="res://scenes/mosquito.tscn" id="4_iywne"]
@@ -12,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://bkq6te8q30rht" path="res://assets/tile_corner_top_left.png" id="7_ca42v"]
 [ext_resource type="Texture2D" uid="uid://bq6cit5w8caa0" path="res://assets/tile_corner_down_right.png" id="8_rysoc"]
 [ext_resource type="Texture2D" uid="uid://dsw4hc80mldak" path="res://assets/tile_corner_down_left.png" id="9_ssvqc"]
+[ext_resource type="Script" uid="uid://diomicnu87yi" path="res://scripts/game_manager.gd" id="14_ir15t"]
 
 [sub_resource type="TileMapPattern" id="TileMapPattern_dinhu"]
 tile_data = PackedInt32Array(0, 12, 0, 65536, 12, 0, 131072, 12, 0, 196608, 12, 0, 262144, 12, 0, 1, 12, 0, 65537, 12, 0, 131073, 12, 0, 196609, 12, 0, 262145, 12, 0, 2, 12, 0, 65538, 12, 0, 131074, 12, 0, 196610, 12, 0, 262146, 12, 0, 3, 12, 0, 65539, 12, 0, 131075, 12, 0, 196611, 12, 0, 262147, 12, 0, 4, 12, 0, 65540, 12, 0, 131076, 12, 0, 196612, 12, 0, 262148, 12, 0)
@@ -70,6 +72,7 @@ sources/12 = SubResource("TileSetAtlasSource_5newe")
 pattern_0 = SubResource("TileMapPattern_dinhu")
 
 [node name="Game" type="Node2D" unique_id=916694075]
+script = ExtResource("1_trtic")
 
 [node name="Walls" type="StaticBody2D" parent="." unique_id=133682971]
 
@@ -80,3 +83,6 @@ tile_set = SubResource("TileSet_g2yis")
 [node name="Mosquito" parent="." unique_id=1176946089 instance=ExtResource("4_iywne")]
 
 [node name="Racket" parent="." unique_id=766657232 instance=ExtResource("5_p57ef")]
+
+[node name="GameManager" type="Node2D" parent="." unique_id=1058215613]
+script = ExtResource("14_ir15t")
