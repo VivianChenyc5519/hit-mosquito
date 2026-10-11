@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://vca5a5aeqt5f"]
 
+[ext_resource type="Script" uid="uid://bj3e1um2igvry" path="res://scripts/human.gd" id="1_fvi3j"]
 [ext_resource type="Texture2D" uid="uid://btlke47w2aeos" path="res://assets/r_hit.png" id="1_p3awx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_fvi3j"]
@@ -101,6 +102,7 @@ animations = [{
 radius = 16.0
 
 [node name="Racket" type="CharacterBody2D" unique_id=766657232]
+script = ExtResource("1_fvi3j")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1987754250]
 position = Vector2(61, 51)
@@ -111,3 +113,7 @@ frame_progress = 0.33862698
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=890618767]
 position = Vector2(61, 36)
 shape = SubResource("CircleShape2D_6ugr2")
+
+[node name="RacketPivot" type="Node2D" parent="." unique_id=1084132392]
+
+[node name="RacketSprite" type="Sprite2D" parent="RacketPivot" unique_id=1161267304]
