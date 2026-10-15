@@ -9,7 +9,7 @@ enum TestPlayer {
 	MOSQUITO,
 	BOTH
 }
-@export var test_player = TestPlayer.HUMAN
+@export var test_player = TestPlayer.MOSQUITO
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -105,7 +105,7 @@ func _on_slap_resolved(hit: bool) -> void:
 		human.play_hitting_animation()
 	
 func _on_mosquito_bite_requested() -> void:
-	var did_hit := true
+	var did_hit := mosquito.can_bite_target(human)
 	print("GAME: Mosquito attempted to bite..")
 	manager.attempt_bite(did_hit)
 

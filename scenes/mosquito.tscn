@@ -127,8 +127,9 @@ animations = [{
 [sub_resource type="CircleShape2D" id="CircleShape2D_6ugr2"]
 radius = 14.0
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_jn24c"]
+
 [node name="Mosquito" type="CharacterBody2D" unique_id=1176946089]
-position = Vector2(50, 50)
 collision_layer = 2
 motion_mode = 1
 script = ExtResource("1_jn24c")
@@ -141,3 +142,10 @@ frame_progress = 0.044030678
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1591447122]
 visible = false
 shape = SubResource("CircleShape2D_6ugr2")
+
+[node name="BiteArea" type="Area2D" parent="." unique_id=544126505]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BiteArea" unique_id=1020958646]
+visibility_layer = 2
+scale = Vector2(2, 2)
+shape = SubResource("CircleShape2D_jn24c")

@@ -101,7 +101,10 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_4ghau"]
+
 [node name="Racket" type="CharacterBody2D" unique_id=766657232]
+position = Vector2(100, 100)
 script = ExtResource("1_fvi3j")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=890618767]
@@ -127,3 +130,10 @@ position = Vector2(-3, 14)
 sprite_frames = SubResource("SpriteFrames_g2yis")
 animation = &"hit"
 frame_progress = 0.8381526
+
+[node name="HurtArea" type="Area2D" parent="." unique_id=377158183]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea" unique_id=1905454817]
+position = Vector2(-4, 11)
+scale = Vector2(2.965, 4.25)
+shape = SubResource("CircleShape2D_4ghau")

@@ -10,6 +10,7 @@ signal bite_requested
 
 
 @onready var mosquito_sprite: AnimatedSprite2D = $MosquitoSprite
+@onready var bite_area: Area2D = $BiteArea
 
 
 var input_enabled: bool = true
@@ -104,3 +105,12 @@ func set_input_enabled(enabled: bool) -> void:
 
 	if not enabled:
 		velocity = Vector2.ZERO
+		
+func can_bite_target(target: Node2D) -> bool:
+	print("\n--- BITE DEBUG ---")
+
+	print("Mosquito global position: ", global_position)
+	print("BiteArea global position: ", bite_area.global_position)
+
+	print("Human global position: ", target.global_position)
+	return bite_area.overlaps_body(target)
