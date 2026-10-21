@@ -11,7 +11,7 @@ signal slap_requested
 @onready var racket_sprite: AnimatedSprite2D = $RacketSprite
 @onready var slap_area: Area2D = $RacketPivot/SlapArea
 @onready var slap_polygon: CollisionPolygon2D = $RacketPivot/SlapArea/CollisionPolygon2D
-
+@onready var hurt_area: Area2D = $HurtArea
 
 func _ready() -> void:
 	racket_sprite.play("idle")

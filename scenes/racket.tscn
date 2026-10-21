@@ -132,8 +132,9 @@ animation = &"hit"
 frame_progress = 0.8381526
 
 [node name="HurtArea" type="Area2D" parent="." unique_id=377158183]
+collision_layer = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea" unique_id=1905454817]
-position = Vector2(-4, 11)
-scale = Vector2(2.965, 4.25)
+position = Vector2(-3, 7)
+scale = Vector2(2.72, 4.255)
 shape = SubResource("CircleShape2D_4ghau")
