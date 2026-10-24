@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bj3e1um2igvry" path="res://scripts/human.gd" id="1_fvi3j"]
 [ext_resource type="Texture2D" uid="uid://btlke47w2aeos" path="res://assets/r_hit.png" id="1_p3awx"]
+[ext_resource type="Texture2D" uid="uid://cnn83octq3ytn" path="res://assets/racket-texture.png" id="2_37dsl"]
+[ext_resource type="Texture2D" uid="uid://dt68jfo74wuuk" path="res://assets/light-texture.png" id="3_2ivwl"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_6ugr2"]
 radius = 16.0
@@ -111,19 +113,35 @@ script = ExtResource("1_fvi3j")
 position = Vector2(61, 36)
 shape = SubResource("CircleShape2D_6ugr2")
 
+[node name="RacketLight" type="PointLight2D" parent="." unique_id=1130793114]
+position = Vector2(-3.0000005, 10.499999)
+scale = Vector2(5.103669, 5.129651)
+texture = ExtResource("2_37dsl")
+texture_scale = 0.01
+
 [node name="RacketPivot" type="Node2D" parent="." unique_id=1084132392]
 
 [node name="VisionCone" type="Polygon2D" parent="RacketPivot" unique_id=1808748755]
-position = Vector2(1, 0)
+position = Vector2(1, -0.401655)
+scale = Vector2(1.2439024, 0.97722554)
 color = Color(1, 1, 0.16470589, 1)
-polygon = PackedVector2Array(0, 0, 41, -31, 41, 32)
+polygon = PackedVector2Array(0, 0, 41, -13.91526, 41, 10.644066)
+
+[node name="VisionLight" type="PointLight2D" parent="RacketPivot" unique_id=1747756868]
+position = Vector2(28.144592, 0.053115845)
+scale = Vector2(0.7829763, 0.81052715)
+texture = ExtResource("3_2ivwl")
+offset = Vector2(50.2, 0)
+texture_scale = 0.1
 
 [node name="SlapArea" type="Area2D" parent="RacketPivot" unique_id=1351158843]
 collision_layer = 4
 collision_mask = 2
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="RacketPivot/SlapArea" unique_id=272696309]
-polygon = PackedVector2Array(0, 1, 41, -29, 42, 32)
+position = Vector2(0.13125038, 0)
+scale = Vector2(1.0106708, 1)
+polygon = PackedVector2Array(0, 1, 52.310562, -16, 51.32112, 12)
 
 [node name="RacketSprite" type="AnimatedSprite2D" parent="." unique_id=1987754250]
 position = Vector2(-3, 14)
@@ -135,6 +153,7 @@ frame_progress = 0.8381526
 collision_layer = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea" unique_id=1905454817]
+visible = false
 position = Vector2(-3, 7)
 scale = Vector2(2.72, 4.255)
 shape = SubResource("CircleShape2D_4ghau")

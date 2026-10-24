@@ -4,12 +4,12 @@ const GameManager = preload("res://scripts/game_manager.gd")
 var manager
 @onready var human: Human = $Racket
 @onready var mosquito: Mosquito = $Mosquito
+
 enum TestPlayer {
 	HUMAN,
-	MOSQUITO,
-	BOTH
+	MOSQUITO
 }
-@export var test_player = TestPlayer.MOSQUITO
+@export var test_player = TestPlayer.HUMAN
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -24,12 +24,16 @@ func setup_test_player() -> void:
 		TestPlayer.HUMAN:
 			human.set_input_enabled(true)
 			mosquito.set_input_enabled(false)
+			$CanvasModulate.visible=true
+			human.set_vision_enabled(true)
 		TestPlayer.MOSQUITO:
 			human.set_input_enabled(false)
 			mosquito.set_input_enabled(true)
-		TestPlayer.BOTH:
-			human.set_input_enabled(true)
-			mosquito.set_input_enabled(true)
+			$CanvasModulate.visible=false
+			human.set_vision_enabled(false)
+		#TestPlayer.BOTH:
+			#human.set_input_enabled(true)
+			#mosquito.set_input_enabled(true)
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:

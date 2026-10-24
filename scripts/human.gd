@@ -12,6 +12,7 @@ signal slap_requested
 @onready var slap_area: Area2D = $RacketPivot/SlapArea
 @onready var slap_polygon: CollisionPolygon2D = $RacketPivot/SlapArea/CollisionPolygon2D
 @onready var hurt_area: Area2D = $HurtArea
+@onready var vision_light: PointLight2D = $RacketPivot/VisionLight
 
 func _ready() -> void:
 	racket_sprite.play("idle")
@@ -87,7 +88,9 @@ func set_stunned(stunned: bool) -> void:
 	if stunned:
 		velocity = Vector2.ZERO
 
-
+func set_vision_enabled(enabled: bool) -> void:
+	vision_light.enabled = enabled
+	
 func set_input_enabled(enabled: bool) -> void:
 	input_enabled = enabled
 

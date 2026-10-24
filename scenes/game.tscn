@@ -74,6 +74,9 @@ pattern_0 = SubResource("TileMapPattern_dinhu")
 [node name="Game" type="Node2D" unique_id=916694075]
 script = ExtResource("1_trtic")
 
+[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1206908251]
+color = Color(0.003921569, 0.003921569, 0.003921569, 0.40784314)
+
 [node name="Walls" type="StaticBody2D" parent="." unique_id=133682971]
 
 [node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=77860513]
