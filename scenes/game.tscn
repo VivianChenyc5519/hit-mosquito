@@ -14,6 +14,12 @@
 [ext_resource type="Texture2D" uid="uid://bq6cit5w8caa0" path="res://assets/tile_corner_down_right.png" id="8_rysoc"]
 [ext_resource type="Texture2D" uid="uid://dsw4hc80mldak" path="res://assets/tile_corner_down_left.png" id="9_ssvqc"]
 [ext_resource type="Script" uid="uid://diomicnu87yi" path="res://scripts/game_manager.gd" id="14_ir15t"]
+[ext_resource type="Script" uid="uid://bhx3a6el1u4gw" path="res://scripts/hud.gd" id="15_ir15t"]
+[ext_resource type="Texture2D" uid="uid://b3lusbtxd1h3b" path="res://assets/heart_0.png" id="16_1kice"]
+[ext_resource type="Texture2D" uid="uid://by7u7i3ka0q7s" path="res://assets/heart_25.png" id="17_5newe"]
+[ext_resource type="Texture2D" uid="uid://d1iihcgm06ujo" path="res://assets/heart_50.png" id="18_37s47"]
+[ext_resource type="Texture2D" uid="uid://80rk3i257v1g" path="res://assets/heart_75.png" id="19_bt5mj"]
+[ext_resource type="Texture2D" uid="uid://dliiysdkm8wal" path="res://assets/heart_full.png" id="20_e1j6l"]
 
 [sub_resource type="TileMapPattern" id="TileMapPattern_dinhu"]
 tile_data = PackedInt32Array(0, 12, 0, 65536, 12, 0, 131072, 12, 0, 196608, 12, 0, 262144, 12, 0, 1, 12, 0, 65537, 12, 0, 131073, 12, 0, 196609, 12, 0, 262145, 12, 0, 2, 12, 0, 65538, 12, 0, 131074, 12, 0, 196610, 12, 0, 262146, 12, 0, 3, 12, 0, 65539, 12, 0, 131075, 12, 0, 196611, 12, 0, 262147, 12, 0, 4, 12, 0, 65540, 12, 0, 131076, 12, 0, 196612, 12, 0, 262148, 12, 0)
@@ -89,3 +95,34 @@ tile_set = SubResource("TileSet_g2yis")
 
 [node name="GameManager" type="Node2D" parent="." unique_id=1058215613]
 script = ExtResource("14_ir15t")
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=200387116]
+layer = 10
+script = ExtResource("15_ir15t")
+heart_dead = ExtResource("16_1kice")
+heart_25 = ExtResource("17_5newe")
+heart_50 = ExtResource("18_37s47")
+heart_75 = ExtResource("19_bt5mj")
+heart_full = ExtResource("20_e1j6l")
+
+[node name="Root" type="Control" parent="HUD" unique_id=127208557]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HeartTexture" type="TextureRect" parent="HUD/Root" unique_id=2071729158]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_bottom = 40.0
+grow_horizontal = 0
+mouse_filter = 2
+texture = ExtResource("20_e1j6l")
+stretch_mode = 5

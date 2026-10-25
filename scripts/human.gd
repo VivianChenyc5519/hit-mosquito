@@ -13,10 +13,25 @@ signal slap_requested
 @onready var slap_polygon: CollisionPolygon2D = $RacketPivot/SlapArea/CollisionPolygon2D
 @onready var hurt_area: Area2D = $HurtArea
 @onready var vision_light: PointLight2D = $RacketPivot/VisionLight
+@onready var health_heart: Sprite2D = $HealthBar
+
+@export var heart_full: Texture2D
+@export var heart_75: Texture2D
+@export var heart_50: Texture2D
+@export var heart_25: Texture2D
+@export var heart_dead: Texture2D
 
 func _ready() -> void:
 	racket_sprite.play("idle")
 	racket_sprite.animation_finished.connect(_on_racket_animation_finished)
+	print("Heart node: ", health_heart)
+	print("Full heart texture: ", heart_full)
+
+	health_heart.texture = heart_full
+
+	print("Heart texture after assignment: ", health_heart.texture)
+	print("Heart visible: ", health_heart.visible)
+	print("Heart position: ", health_heart.global_position)
 
 
 var input_enabled := true
@@ -27,6 +42,18 @@ func _physics_process(_delta: float) -> void:
 	handle_movement()
 	handle_aim(_delta)
 
+func set_hp_display(current_hp: int) -> void:
+	match current_hp:
+		4:
+			health_heart.texture = heart_full
+		3:
+			health_heart.texture = heart_75
+		2:
+			health_heart.texture = heart_50
+		1:
+			health_heart.texture = heart_25
+		0:
+			health_heart.texture = heart_dead
 
 func handle_movement() -> void:
 	if not input_enabled or is_stunned:

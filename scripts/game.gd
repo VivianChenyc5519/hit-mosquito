@@ -4,18 +4,20 @@ const GameManager = preload("res://scripts/game_manager.gd")
 var manager
 @onready var human: Human = $Racket
 @onready var mosquito: Mosquito = $Mosquito
+@onready var hud: HUD = $HUD
 
 enum TestPlayer {
 	HUMAN,
 	MOSQUITO
 }
-@export var test_player = TestPlayer.HUMAN
+@export var test_player = TestPlayer.MOSQUITO
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	manager = GameManager.new()
-	add_child(manager)
 	connect_game_signals()
+	
+	add_child(manager)
 	connect_player_signals()
 	setup_test_player()
 
@@ -56,6 +58,7 @@ func connect_player_signals() -> void:
 	 )
 
 func connect_game_signals() -> void:
+	print("Connecting signals")
 	manager.match_started.connect(
 		_on_match_started
 	)
@@ -80,7 +83,8 @@ func _on_human_slap_requested() -> void:
 	manager.attempt_slap(did_hit)
 	
 func _on_human_hp_changed(current: int, max_hp: int) -> void :
-	print("Human hp: ", current, "/", max_hp)
+	#hud.set_human_hp(current, max_hp)
+	human.set_hp_display(current)
 
 func _on_human_stunned(duration: float) -> void:
 	human.set_stunned(true)

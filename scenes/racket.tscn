@@ -3,7 +3,12 @@
 [ext_resource type="Script" uid="uid://bj3e1um2igvry" path="res://scripts/human.gd" id="1_fvi3j"]
 [ext_resource type="Texture2D" uid="uid://btlke47w2aeos" path="res://assets/r_hit.png" id="1_p3awx"]
 [ext_resource type="Texture2D" uid="uid://cnn83octq3ytn" path="res://assets/racket-texture.png" id="2_37dsl"]
+[ext_resource type="Texture2D" uid="uid://80rk3i257v1g" path="res://assets/heart_75.png" id="3_1uy56"]
 [ext_resource type="Texture2D" uid="uid://dt68jfo74wuuk" path="res://assets/light-texture.png" id="3_2ivwl"]
+[ext_resource type="Texture2D" uid="uid://d1iihcgm06ujo" path="res://assets/heart_50.png" id="4_j2vgf"]
+[ext_resource type="Texture2D" uid="uid://by7u7i3ka0q7s" path="res://assets/heart_25.png" id="5_2f5s2"]
+[ext_resource type="Texture2D" uid="uid://dliiysdkm8wal" path="res://assets/heart_full.png" id="5_87xxb"]
+[ext_resource type="Texture2D" uid="uid://b3lusbtxd1h3b" path="res://assets/heart_0.png" id="6_s7o8x"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_6ugr2"]
 radius = 16.0
@@ -108,6 +113,11 @@ animations = [{
 [node name="Racket" type="CharacterBody2D" unique_id=766657232]
 position = Vector2(100, 100)
 script = ExtResource("1_fvi3j")
+heart_full = ExtResource("5_87xxb")
+heart_75 = ExtResource("3_1uy56")
+heart_50 = ExtResource("4_j2vgf")
+heart_25 = ExtResource("5_2f5s2")
+heart_dead = ExtResource("6_s7o8x")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=890618767]
 position = Vector2(61, 36)
@@ -157,3 +167,7 @@ visible = false
 position = Vector2(-3, 7)
 scale = Vector2(2.72, 4.255)
 shape = SubResource("CircleShape2D_4ghau")
+
+[node name="HealthBar" type="Sprite2D" parent="." unique_id=1978185686]
+position = Vector2(-3, 55)
+texture = ExtResource("5_87xxb")

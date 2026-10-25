@@ -77,7 +77,6 @@ func _ready() -> void:
 
 	human_stun_remaining = 0.0
 	mosquito_boost_remaining = 0.0
-
 	match_started.emit(match_duration)
 	human_hp_changed.emit(human_hp, human_max_hp)
 
