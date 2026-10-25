@@ -11,6 +11,7 @@ signal bite_requested
 
 @onready var mosquito_sprite: AnimatedSprite2D = $MosquitoSprite
 @onready var bite_area: Area2D = $BiteArea
+@onready var coolBar: TextureProgressBar = $CoolDown
 
 
 var input_enabled: bool = true

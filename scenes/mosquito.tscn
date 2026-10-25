@@ -150,3 +150,7 @@ collision_mask = 8
 visibility_layer = 2
 scale = Vector2(2, 2)
 shape = SubResource("CircleShape2D_jn24c")
+
+[node name="CoolDown" type="TextureProgressBar" parent="." unique_id=98912732]
+offset_right = 40.0
+offset_bottom = 40.0
