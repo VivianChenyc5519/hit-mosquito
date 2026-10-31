@@ -1,6 +1,6 @@
 Hit That Moustique !
 
-by Vivian chen and Lu-Ann Coquard-Morel
+by Vivian chen and Lou-Ann Coquard-Morel
 
 Hit That Moustique ! is a 2-player 2D game built in Godot 4.7. One player is the Human, who hunts with an electric racket and a flashlight. The other is the Mosquito, who tries to bite the Human before the timer runs out. The Human wins by zapping the mosquito once. The Mosquito wins by draining all 4 of the Human’s HP, or by surviving until the 120-second timer ends.
 
