@@ -120,7 +120,7 @@ heart_25 = ExtResource("5_2f5s2")
 heart_dead = ExtResource("6_s7o8x")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=890618767]
-position = Vector2(61, 36)
+position = Vector2(-3, 14)
 shape = SubResource("CircleShape2D_6ugr2")
 
 [node name="RacketLight" type="PointLight2D" parent="." unique_id=1130793114]

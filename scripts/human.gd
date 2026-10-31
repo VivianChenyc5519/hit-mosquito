@@ -21,7 +21,14 @@ signal slap_requested
 @export var heart_25: Texture2D
 @export var heart_dead: Texture2D
 
+const CooldownRing = preload("res://scripts/cooldown_ring.gd")
+var cooldown_ring: CooldownRing
+
+
 func _ready() -> void:
+	cooldown_ring = CooldownRing.new()
+	cooldown_ring.position = Vector2(-3, 76)
+	add_child(cooldown_ring)
 	racket_sprite.play("idle")
 	racket_sprite.animation_finished.connect(_on_racket_animation_finished)
 	print("Heart node: ", health_heart)
@@ -39,8 +46,19 @@ var is_stunned := false
 
 
 func _physics_process(_delta: float) -> void:
+	# Only the owner (the host) simulates the human; the other peer just receives its state.
+	if not is_multiplayer_authority():
+		return
 	handle_movement()
 	handle_aim(_delta)
+	if Network.online:
+		_net_sync.rpc(global_position, racket_pivot.rotation)
+
+
+@rpc("authority", "unreliable")
+func _net_sync(pos: Vector2, aim: float) -> void:
+	global_position = pos
+	racket_pivot.rotation = aim
 
 func set_hp_display(current_hp: int) -> void:
 	match current_hp:
@@ -87,6 +105,8 @@ func handle_aim(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_multiplayer_authority():
+		return
 	if event.is_action_pressed("primary_action"):
 		request_slap()
 
@@ -114,6 +134,10 @@ func set_stunned(stunned: bool) -> void:
 
 	if stunned:
 		velocity = Vector2.ZERO
+
+func start_cooldown(duration: float) -> void:
+	cooldown_ring.start(duration)
+
 
 func set_vision_enabled(enabled: bool) -> void:
 	vision_light.enabled = enabled

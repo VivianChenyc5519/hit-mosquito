@@ -13,7 +13,6 @@
 [ext_resource type="Texture2D" uid="uid://bkq6te8q30rht" path="res://assets/tile_corner_top_left.png" id="7_ca42v"]
 [ext_resource type="Texture2D" uid="uid://bq6cit5w8caa0" path="res://assets/tile_corner_down_right.png" id="8_rysoc"]
 [ext_resource type="Texture2D" uid="uid://dsw4hc80mldak" path="res://assets/tile_corner_down_left.png" id="9_ssvqc"]
-[ext_resource type="Script" uid="uid://diomicnu87yi" path="res://scripts/game_manager.gd" id="14_ir15t"]
 [ext_resource type="Script" uid="uid://bhx3a6el1u4gw" path="res://scripts/hud.gd" id="15_ir15t"]
 [ext_resource type="Texture2D" uid="uid://b3lusbtxd1h3b" path="res://assets/heart_0.png" id="16_1kice"]
 [ext_resource type="Texture2D" uid="uid://by7u7i3ka0q7s" path="res://assets/heart_25.png" id="17_5newe"]
@@ -92,9 +91,6 @@ tile_set = SubResource("TileSet_g2yis")
 [node name="Mosquito" parent="." unique_id=1176946089 instance=ExtResource("4_iywne")]
 
 [node name="Racket" parent="." unique_id=766657232 instance=ExtResource("5_p57ef")]
-
-[node name="GameManager" type="Node2D" parent="." unique_id=1058215613]
-script = ExtResource("14_ir15t")
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=200387116]
 layer = 10

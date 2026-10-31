@@ -21,7 +21,22 @@ var is_dying: bool = false
 var is_dead: bool = false
 
 
+const CooldownRing = preload("res://scripts/cooldown_ring.gd")
+var cooldown_ring: CooldownRing
+
+
+func start_cooldown(duration: float) -> void:
+	# Only the mosquito's own player needs to see the bite cooldown.
+	if is_multiplayer_authority():
+		cooldown_ring.start(duration)
+
+
 func _ready() -> void:
+	coolBar.visible = false  # replaced by the code-drawn ring
+	cooldown_ring = CooldownRing.new()
+	cooldown_ring.position = Vector2(0, -26)
+	cooldown_ring.ring_color = Color(1, 0.3, 0.3)
+	add_child(cooldown_ring)
 	mosquito_sprite.animation_finished.connect(
 		_on_animation_finished
 	)
@@ -29,9 +44,26 @@ func _ready() -> void:
 	mosquito_sprite.play("idle")
 
 
+var _last_pos: Vector2 = Vector2.ZERO
+var _remote_moving: bool = false
+
+
 func _physics_process(_delta: float) -> void:
-	handle_movement()
+	if is_multiplayer_authority():
+		handle_movement()
+		if Network.online:
+			_net_sync.rpc(global_position)
+	else:
+		# Remote copy: only derive the animation from the received movement.
+		_remote_moving = global_position.distance_to(_last_pos) > 0.1
+		_last_pos = global_position
+		velocity = Vector2.ONE if _remote_moving else Vector2.ZERO
 	update_animation()
+
+
+@rpc("authority", "unreliable")
+func _net_sync(pos: Vector2) -> void:
+	global_position = pos
 
 
 func handle_movement() -> void:
@@ -90,6 +122,8 @@ func set_boosted(boosted: bool) -> void:
 	is_boosted = boosted
 	
 func _unhandled_input(event: InputEvent) -> void:
+	if not is_multiplayer_authority():
+		return
 	if event.is_action_pressed("primary_action"):
 		request_bite()
 
