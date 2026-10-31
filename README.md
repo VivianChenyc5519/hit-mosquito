@@ -2,6 +2,12 @@ Hit That Moustique !
 
 by Vivian chen and Lou-Ann Coquard-Morel
 
+<img width="2796" height="1332" alt="mosquito2" src="https://github.com/user-attachments/assets/54a3aa0a-b1dd-43fd-9423-7ae6113486eb" />
+
+<img width="2795" height="1364" alt="mosquito1" src="https://github.com/user-attachments/assets/ffc7e7c5-5028-456e-9992-c9103bdb4dbf" />
+
+
+
 Hit That Moustique ! is a 2-player 2D game built in Godot 4.7. One player is the Human, who hunts with an electric racket and a flashlight. The other is the Mosquito, who tries to bite the Human before the timer runs out. The Human wins by zapping the mosquito once. The Mosquito wins by draining all 4 of the Human’s HP, or by surviving until the 120-second timer ends.
 
 The Human walks at 220 px/s with WASD or the arrow keys, and the mouse aims the racket and the flashlight. Both the racket head and the beam turn toward the mouse, and you can aim while walking. A left click swings the racket. A swing that misses plays the woosh sound and the swing animation. A swing that touches the mosquito plays the zap sound and the hit animation, and it kills the mosquito instantly. After each swing there is a 0.5 s cooldown, and you can’t swing while stunned.
