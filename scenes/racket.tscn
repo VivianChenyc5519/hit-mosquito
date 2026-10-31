@@ -84,20 +84,20 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_1uy56")
 }],
-"loop": 1,
+"loop": false,
 "name": &"hit",
 "speed": 15.0
 }, {
 "frames": [{
-"duration": 15.0,
+"duration": 2.0,
 "texture": SubResource("AtlasTexture_j2vgf")
 }, {
-"duration": 0.5,
+"duration": 1.5,
 "texture": SubResource("AtlasTexture_2f5s2")
 }],
-"loop": 1,
+"loop": false,
 "name": &"hitting",
-"speed": 20.0
+"speed": 14.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -112,6 +112,8 @@ animations = [{
 
 [node name="Racket" type="CharacterBody2D" unique_id=766657232]
 position = Vector2(100, 100)
+collision_layer = 16
+collision_mask = 1
 script = ExtResource("1_fvi3j")
 heart_full = ExtResource("5_87xxb")
 heart_75 = ExtResource("3_1uy56")
@@ -123,15 +125,10 @@ heart_dead = ExtResource("6_s7o8x")
 position = Vector2(-3, 14)
 shape = SubResource("CircleShape2D_6ugr2")
 
-[node name="RacketLight" type="PointLight2D" parent="." unique_id=1130793114]
-position = Vector2(-3.0000005, 10.499999)
-scale = Vector2(5.103669, 5.129651)
-texture = ExtResource("2_37dsl")
-texture_scale = 0.01
-
 [node name="RacketPivot" type="Node2D" parent="." unique_id=1084132392]
 
 [node name="VisionCone" type="Polygon2D" parent="RacketPivot" unique_id=1808748755]
+visible = false
 position = Vector2(1, -0.401655)
 scale = Vector2(1.2439024, 0.97722554)
 color = Color(1, 1, 0.16470589, 1)

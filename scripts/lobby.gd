@@ -1,5 +1,6 @@
 extends Control
-# Main page: title + host/join + Play button (enabled for the host once a 2nd player is connected).
+# Main page: title + "how to play" window + connection window + solo debug window.
+# The Play button is enabled for the host once a 2nd player is connected.
 
 var status_label: Label
 var play_button: Button
@@ -9,6 +10,8 @@ var ip_edit: LineEdit
 
 
 func _ready() -> void:
+	theme = UiTheme.make()
+	Sfx.stop_music()
 	_build_ui()
 	Network.players_changed.connect(_on_players_changed)
 	Network.join_failed.connect(_on_join_failed)
@@ -19,68 +22,139 @@ func _ready() -> void:
 	_refresh()
 
 
+func _window(title: String, color: Color = UiTheme.COL_BORDER) -> VBoxContainer:
+	# A "mini window": bordered panel with a coloured title.
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UiTheme.box(UiTheme.COL_PANEL, color, 2, 10, 8))
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	panel.add_child(v)
+	var t := Label.new()
+	t.text = title
+	t.add_theme_color_override("font_color", color if color != UiTheme.COL_BORDER else UiTheme.COL_ACCENT)
+	t.add_theme_font_override("font", UiTheme.font(true))
+	v.add_child(t)
+	var sep := HSeparator.new()
+	v.add_child(sep)
+	# the caller adds the panel through v.get_parent()
+	return v
+
+
+func _text(parent: Control, text: String, color: Color = UiTheme.COL_TEXT, size: int = 11) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(1, 0)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_font_size_override("font_size", size)
+	parent.add_child(l)
+	return l
+
+
 func _build_ui() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color(0.08, 0.08, 0.12)
+	bg.color = Color("0a0b13")
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
+
+	# faint floor tiles as a background
+	var floor_tex := TextureRect.new()
+	floor_tex.texture = load("res://assets/tile.png") as Texture2D
+	floor_tex.stretch_mode = TextureRect.STRETCH_TILE
+	floor_tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	floor_tex.modulate = Color(1, 1, 1, 0.12)
+	floor_tex.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(floor_tex)
 
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 
-	var box := VBoxContainer.new()
-	box.custom_minimum_size = Vector2(320, 0)
-	box.add_theme_constant_override("separation", 14)
-	center.add_child(box)
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 6)
+	center.add_child(root)
 
+	# --- title ---
 	var title := Label.new()
-	title.text = "Hit That Moustique !"
+	title.text = "HIT THAT MOUSTIQUE !"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 36)
-	box.add_child(title)
+	title.add_theme_font_size_override("font_size", 34)
+	title.add_theme_font_override("font", UiTheme.font(true))
+	title.add_theme_color_override("font_color", UiTheme.COL_ACCENT)
+	title.add_theme_color_override("font_outline_color", Color("5a1010"))
+	title.add_theme_constant_override("outline_size", 8)
+	root.add_child(title)
+	var sub := Label.new()
+	sub.text = "a 2-player hunt in the dark"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_color_override("font_color", UiTheme.COL_DIM)
+	root.add_child(sub)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	root.add_child(row)
+
+	# --- how to play window ---
+	var how := _window("HOW TO PLAY")
+	how.get_parent().custom_minimum_size = Vector2(300, 0)
+	row.add_child(how.get_parent())
+	_text(how, "HUMAN  (host)", UiTheme.COL_HUMAN, 12)
+	_text(how, "Electric racket + flashlight. You only see what the light shows. Mouse = aim, click = ZAP. One hit kills the mosquito, but a bite costs 1 of your 4 HP and stuns you.", UiTheme.COL_TEXT, 10)
+	_text(how, "MOSQUITO  (joins)", UiTheme.COL_MOSQUITO, 12)
+	_text(how, "You see the whole room and feel the human as a red dot. Click to bite. A bite gives you a speed boost. Survive until the timer ends!", UiTheme.COL_TEXT, 10)
+
+	# --- connection window ---
+	var net := _window("PLAY ONLINE")
+	net.get_parent().custom_minimum_size = Vector2(300, 0)
+	row.add_child(net.get_parent())
 
 	ip_edit = LineEdit.new()
 	ip_edit.text = "127.0.0.1"
 	ip_edit.placeholder_text = "Host IP address"
-	box.add_child(ip_edit)
+	net.add_child(ip_edit)
 
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 6)
+	net.add_child(buttons)
 	host_button = Button.new()
-	host_button.text = "Host game (you are the Human)"
+	host_button.text = "Host (Human)"
+	host_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	host_button.pressed.connect(_on_host_pressed)
-	box.add_child(host_button)
-
+	buttons.add_child(host_button)
 	join_button = Button.new()
-	join_button.text = "Join game (you are the Moustique)"
+	join_button.text = "Join (Mosquito)"
+	join_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	join_button.pressed.connect(_on_join_pressed)
-	box.add_child(join_button)
+	buttons.add_child(join_button)
 
-	status_label = Label.new()
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	box.add_child(status_label)
+	status_label = _text(net, "", UiTheme.COL_DIM, 11)
+	status_label.custom_minimum_size = Vector2(1, 30)
 
 	play_button = Button.new()
 	play_button.text = "PLAY"
 	play_button.disabled = true
+	play_button.custom_minimum_size = Vector2(0, 30)
+	play_button.add_theme_font_size_override("font_size", 16)
 	play_button.pressed.connect(_on_play_pressed)
-	box.add_child(play_button)
+	net.add_child(play_button)
 
-	# --- Solo debug mode (no network needed) ---
-	var sep := HSeparator.new()
-	box.add_child(sep)
-	var dbg_label := Label.new()
-	dbg_label.text = "Debug (solo, in-game press TAB to swap role)"
-	dbg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(dbg_label)
+	# --- solo debug window ---
+	var dbg := _window("SOLO TEST  (no network)", Color("6f7399"))
+	root.add_child(dbg.get_parent())
+	var drow := HBoxContainer.new()
+	drow.add_theme_constant_override("separation", 6)
+	dbg.add_child(drow)
 	var dbg_human := Button.new()
-	dbg_human.text = "Debug: play as Human"
+	dbg_human.text = "Test as Human"
+	dbg_human.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dbg_human.pressed.connect(func(): Network.start_debug("human"))
-	box.add_child(dbg_human)
+	drow.add_child(dbg_human)
 	var dbg_mosq := Button.new()
-	dbg_mosq.text = "Debug: play as Moustique"
+	dbg_mosq.text = "Test as Mosquito"
+	dbg_mosq.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dbg_mosq.pressed.connect(func(): Network.start_debug("mosquito"))
-	box.add_child(dbg_mosq)
+	drow.add_child(dbg_mosq)
+	_text(dbg, "Same game as online. In game: TAB swaps role, R restarts, M toggles music.", UiTheme.COL_DIM, 10)
 
 
 func _on_host_pressed() -> void:
@@ -134,8 +208,8 @@ func _refresh() -> void:
 	if Network.is_host():
 		status_label.text = "Players: %d / %d" % [count, Network.MAX_PLAYERS]
 		play_button.disabled = count < Network.MAX_PLAYERS
-		play_button.text = "PLAY" if count == Network.MAX_PLAYERS else "Waiting for a second player..."
+		play_button.text = "PLAY" if count == Network.MAX_PLAYERS else "Waiting for a 2nd player..."
 	else:
 		status_label.text = "Connected. Players: %d / %d" % [count, Network.MAX_PLAYERS]
 		play_button.disabled = true
-		play_button.text = "Waiting for the host to press Play..."
+		play_button.text = "Waiting for the host..."

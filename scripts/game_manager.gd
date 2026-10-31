@@ -21,7 +21,7 @@ enum EndReason {
 }
 
 @export_category("Match")
-@export var match_duration: float = 60.0;
+@export var match_duration: float = 120.0  # seconds (was 60: too short)
 
 @export_category("Human")
 @export var human_max_hp: int = 4;
@@ -29,7 +29,8 @@ enum EndReason {
 @export var slap_cooldown: float = 0.5;
 
 @export_category("Mosquito") 
-@export var bite_cooldown: float = 8.0;
+@export var bite_cooldown: float = 8.0  # after a bite that HIT
+@export var bite_miss_cooldown: float = 1.0  # after a bite that MISSED (stops click-spam)
 @export var mosquito_boost_duration: float = 1.5;
 
 var match_state := MatchState.WAITING
@@ -139,7 +140,7 @@ func attempt_bite(hit_confirmed: bool) -> bool:
 		return false
 	bite_resolved.emit(hit_confirmed)
 	if not hit_confirmed:
-		print("Missed hit")
+		bite_cooldown_remaining = bite_miss_cooldown
 		return true
 	human_hp -= 1
 	human_hp_changed.emit(

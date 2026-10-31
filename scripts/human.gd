@@ -25,20 +25,31 @@ const CooldownRing = preload("res://scripts/cooldown_ring.gd")
 var cooldown_ring: CooldownRing
 
 
+# Flashlight cone geometry (matches light-texture.png): used to decide if the mosquito is "lit".
+const FLASH_LENGTH := 136.0
+const FLASH_HALF_ANGLE := 0.22  # radians (~12.5 degrees)
+
+var listener: AudioListener2D
+
+
 func _ready() -> void:
 	cooldown_ring = CooldownRing.new()
 	cooldown_ring.position = Vector2(-3, 76)
 	add_child(cooldown_ring)
 	racket_sprite.play("idle")
 	racket_sprite.animation_finished.connect(_on_racket_animation_finished)
-	print("Heart node: ", health_heart)
-	print("Full heart texture: ", heart_full)
-
 	health_heart.texture = heart_full
 
-	print("Heart texture after assignment: ", health_heart.texture)
-	print("Heart visible: ", health_heart.visible)
-	print("Heart position: ", health_heart.global_position)
+	# The human always sees himself (sprite, heart, ring) even in the dark.
+	var unshaded := CanvasItemMaterial.new()
+	unshaded.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	racket_sprite.material = unshaded
+	health_heart.material = unshaded
+	cooldown_ring.material = unshaded
+
+	# Ears of the human: the mosquito buzz gets louder / quieter with the distance to this node.
+	listener = AudioListener2D.new()
+	add_child(listener)
 
 
 var input_enabled := true
@@ -118,11 +129,33 @@ func request_slap() -> void:
 	
 	
 func play_hitting_animation() -> void:
+	# Missed swing (called ONLY when the player clicked, never when moving).
+	racket_sprite.stop()
 	racket_sprite.play("hitting")
 
 
 func play_hit_animation() -> void:
+	# Electric hit on the mosquito.
+	racket_sprite.stop()
 	racket_sprite.play("hit")
+
+
+func play_hurt() -> void:
+	# Red flash when bitten.
+	var t := create_tween()
+	racket_sprite.modulate = Color(1.0, 0.25, 0.25)
+	t.tween_property(racket_sprite, "modulate", Color.WHITE, 0.5)
+
+
+# True if a point of the world is inside the flashlight beam (+ a margin for the body size).
+func is_lit(world_pos: Vector2, margin: float = 8.0) -> bool:
+	if not vision_light.enabled:
+		return true
+	var local: Vector2 = racket_pivot.to_local(world_pos)
+	if local.x < -margin or local.x > FLASH_LENGTH + margin:
+		return false
+	var allowed: float = maxf(local.x, 0.0) * tan(FLASH_HALF_ANGLE) + margin
+	return absf(local.y) <= allowed
 
 
 func play_idle_animation() -> void:
@@ -141,6 +174,7 @@ func start_cooldown(duration: float) -> void:
 
 func set_vision_enabled(enabled: bool) -> void:
 	vision_light.enabled = enabled
+	vision_light.energy = 1.3
 	
 func set_input_enabled(enabled: bool) -> void:
 	input_enabled = enabled

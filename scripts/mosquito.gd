@@ -31,8 +31,21 @@ func start_cooldown(duration: float) -> void:
 		cooldown_ring.start(duration)
 
 
+var buzz: AudioStreamPlayer2D
+var listener: AudioListener2D
+var _sprite_tween: Tween
+
+
 func _ready() -> void:
 	coolBar.visible = false  # replaced by the code-drawn ring
+
+	# Always-on buzzing loop. The human's AudioListener2D makes it louder when close.
+	buzz = Sfx.make_buzz_player()
+	add_child(buzz)
+	buzz.play()
+	listener = AudioListener2D.new()
+	add_child(listener)
+
 	cooldown_ring = CooldownRing.new()
 	cooldown_ring.position = Vector2(0, -26)
 	cooldown_ring.ring_color = Color(1, 0.3, 0.3)
@@ -108,6 +121,7 @@ func die() -> void:
 	velocity = Vector2.ZERO
 
 	mosquito_sprite.play("die")
+	buzz.stop()
 
 
 func _on_animation_finished() -> void:
@@ -120,6 +134,26 @@ func _on_animation_finished() -> void:
 
 func set_boosted(boosted: bool) -> void:
 	is_boosted = boosted
+	if buzz != null:
+		buzz.pitch_scale = 1.3 if boosted else 1.0
+
+
+# Bite animation (called ONLY when a bite is really performed): lunge toward the target.
+func play_bite_animation(target_pos: Vector2) -> void:
+	if is_dying or is_dead:
+		return
+	var dir: Vector2 = (target_pos - global_position).normalized()
+	if _sprite_tween != null:
+		_sprite_tween.kill()
+	mosquito_sprite.position = Vector2.ZERO
+	mosquito_sprite.scale = Vector2.ONE
+	_sprite_tween = create_tween()
+	_sprite_tween.set_parallel(true)
+	_sprite_tween.tween_property(mosquito_sprite, "position", dir * 14.0, 0.07)
+	_sprite_tween.tween_property(mosquito_sprite, "scale", Vector2(1.5, 1.5), 0.07)
+	_sprite_tween.chain().set_parallel(true)
+	_sprite_tween.tween_property(mosquito_sprite, "position", Vector2.ZERO, 0.16)
+	_sprite_tween.tween_property(mosquito_sprite, "scale", Vector2.ONE, 0.16)
 	
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_multiplayer_authority():

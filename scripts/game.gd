@@ -1,35 +1,75 @@
 extends Node2D
 # Game scene. The HOST (peer 1) is the Human and runs the rules (GameManager).
 # The CLIENT is the Mosquito. Clients send requests; the host resolves and broadcasts results.
+# Debug (solo) mode runs exactly the same code, just without a network.
 
 const GameManager = preload("res://scripts/game_manager.gd")
 const HumanSensor = preload("res://scripts/human_sensor.gd")
 const START_DELAY := 1.0  # lets both peers finish loading the scene before the match starts
 
-var manager
-@onready var human: Human = $Racket
-@onready var mosquito: Mosquito = $Mosquito
+# --- Map options (edit in the Inspector on the Game node) ---
+# Invisible walls around the screen. Turn OFF when you add your own collision walls to the map.
+@export var use_room_bounds: bool = true
+# Colour of the floor (the empty space between wall tiles). The flashlight reveals it for the human.
+@export var floor_color: Color = Color(0.5, 0.52, 0.6, 1.0)
+# Darkness seen by the human (outside of the flashlight).
+@export var darkness_color: Color = Color(0.012, 0.012, 0.025, 1.0)
+# Where the players start (must be on empty floor, not inside a wall tile).
+@export var human_spawn: Vector2 = Vector2(72, 152)
+@export var mosquito_spawn: Vector2 = Vector2(400, 360)
 
 enum TestPlayer { HUMAN, MOSQUITO }
 # Only used when you run this scene directly (no network) for debugging.
 @export var test_player: TestPlayer = TestPlayer.HUMAN
 
-var time_left: float = 0.0
-var match_running: bool = false
-var timer_label: Label
-var end_layer: CanvasLayer
-var end_label: Label
-var debug_label: Label
+var manager
+@onready var human: Human = $Racket
+@onready var mosquito: Mosquito = $Mosquito
+
+var ui: GameUI
+var darkness: CanvasModulate
 var sensor_node: HumanSensor
-var debug_as_human: bool = true
+
+var me_is_human: bool = true
+var match_running: bool = false
+var match_over: bool = false
+var time_left: float = 0.0
+var time_total: float = 120.0
+
+# Replicated state used by the stats panels (updated on every peer by the RPCs below).
+var human_hp: int = 4
+var human_max_hp: int = 4
+var mosquito_alive: bool = true
+var slap_cd_end: int = 0
+var slap_cd_total: float = 0.5
+var bite_cd_end: int = 0
+var bite_cd_total: float = 1.0
+var stun_end: int = 0
+var boost_end: int = 0
 
 
 func _ready() -> void:
-	_build_overlay()
-	_build_boundaries()
+	darkness = get_node_or_null("CanvasModulate") as CanvasModulate
+	if darkness == null:
+		darkness = CanvasModulate.new()
+		darkness.name = "CanvasModulate"
+		add_child(darkness)
+
+	ui = GameUI.new()
+	add_child(ui)
+	ui.back_to_lobby_pressed.connect(func(): Network.go_to_lobby())
+	ui.play_again_pressed.connect(func(): get_tree().reload_current_scene())
+
+	RenderingServer.set_default_clear_color(Color.BLACK)
+	_setup_map_visuals()
+	if use_room_bounds:
+		_build_boundaries()
+
 	# Spawn points (the mosquito used to start at 0,0 = inside the wall).
-	human.global_position = Vector2(100, 100)
-	mosquito.global_position = Vector2(540, 280)
+	human.global_position = human_spawn
+	mosquito.global_position = mosquito_spawn
+
+	Sfx.play_music()
 
 	if Network.online:
 		# Host owns the human, the joining player owns the mosquito.
@@ -44,21 +84,44 @@ func _ready() -> void:
 			_setup_role(false)
 			mosquito.bite_requested.connect(_on_mosquito_bite_requested)
 	else:
-		# Offline debug mode: both characters exist, one keyboard.
+		# Offline debug mode: both characters exist, one keyboard. Same rules, same UI, same sounds.
 		human.slap_requested.connect(_on_human_slap_requested)
 		mosquito.bite_requested.connect(_on_mosquito_bite_requested)
-		var as_human: bool = (test_player == TestPlayer.HUMAN)
+		var as_human: bool = test_player == TestPlayer.HUMAN
 		if Network.debug_role != "":
 			as_human = Network.debug_role == "human"
 		_setup_role(as_human)
 		_start_host_match()
-		debug_label.text = "DEBUG MODE - TAB: swap role | R: restart"
-		debug_label.visible = true
+		ui.set_debug_text("DEBUG MODE\nTAB: swap role\nR: restart")
+
+
+# ---------------------------------------------------------------- map
+
+# Floor + walls. All tiles of "TileMapLayer" are walls: they are drawn UNSHADED, so the human always
+# sees them even in the dark. The floor is a plain rectangle that only the flashlight can reveal.
+func _setup_map_visuals() -> void:
+	var floor_rect := ColorRect.new()
+	floor_rect.name = "Floor"
+	floor_rect.color = floor_color
+	floor_rect.position = Vector2.ZERO
+	floor_rect.size = Vector2(640, 384)
+	floor_rect.z_index = -100
+	floor_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(floor_rect)
+	move_child(floor_rect, 0)
+
+	var tm := get_node_or_null("TileMapLayer") as TileMapLayer
+	if tm != null:
+		var unshaded := CanvasItemMaterial.new()
+		unshaded.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+		tm.material = unshaded
 
 
 func _build_boundaries() -> void:
 	# The room is 40x24 tiles of 16px; the outer ring of tiles is the wall.
 	# The "Walls" node has no collision shapes, so players could walk out of the room.
+	# Only these invisible walls collide with the characters (layer 1). Racket and mosquito never
+	# collide with each other: they only "hit or miss" through their Area2D.
 	var inner := Rect2(16, 16, 608, 352)
 	var thick := 64.0
 	var body := StaticBody2D.new()
@@ -79,17 +142,25 @@ func _build_boundaries() -> void:
 	add_child(body)
 
 
+# ---------------------------------------------------------------- roles / vision
+
 func _setup_role(is_human: bool) -> void:
+	me_is_human = is_human
 	human.set_input_enabled(is_human)
 	mosquito.set_input_enabled(not is_human)
-	var modulate_node: CanvasModulate = get_node_or_null("CanvasModulate")
-	if modulate_node == null:
-		modulate_node = CanvasModulate.new()
-		modulate_node.name = "CanvasModulate"
-		modulate_node.color = Color(0.03, 0.03, 0.05)
-		add_child(modulate_node)
-	modulate_node.visible = is_human  # human sees only a cone, mosquito sees everything
+
+	# Human: pitch black except the flashlight. Mosquito: sees the whole room.
+	darkness.color = darkness_color
+	darkness.visible = is_human and not match_over
 	human.set_vision_enabled(is_human)
+
+	# Ears: the human hears the buzz get louder when it gets closer.
+	if is_human:
+		human.listener.make_current()
+		mosquito.buzz.volume_db = 0.0
+	else:
+		mosquito.listener.make_current()
+		mosquito.buzz.volume_db = -14.0
 
 	if sensor_node:
 		sensor_node.queue_free()
@@ -99,6 +170,8 @@ func _setup_role(is_human: bool) -> void:
 		sensor_node = HumanSensor.new()
 		sensor_node.target = human
 		add_child(sensor_node)
+
+	ui.set_roles(is_human)
 
 
 func _start_host_match() -> void:
@@ -112,17 +185,23 @@ func _start_host_match() -> void:
 	manager.mosquito_boost_started.connect(_on_mosquito_boost_started)
 	manager.mosquito_boost_ended.connect(_on_mosquito_boost_ended)
 	manager.slap_resolved.connect(_on_slap_resolved)
+	manager.bite_resolved.connect(_on_bite_resolved)
 	add_child(manager)  # _ready of the manager starts the match
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	# Debug-only shortcuts (offline mode).
 	var key := event as InputEventKey
-	if Network.online or key == null or not key.pressed or key.echo:
+	if key == null or not key.pressed or key.echo:
 		return
-	if key.keycode == KEY_TAB:
-		var currently_human := human.input_enabled
-		_setup_role(not currently_human)
+	if key.keycode == KEY_M:
+		Sfx.toggle_music()
+		return
+	# Debug-only shortcuts (offline mode).
+	if Network.online:
+		return
+	if key.keycode == KEY_TAB and not match_over:
+		_setup_role(not human.input_enabled)
+		get_viewport().set_input_as_handled()
 	elif key.keycode == KEY_R:
 		get_tree().reload_current_scene()
 
@@ -130,10 +209,28 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if match_running:
 		time_left = maxf(time_left - delta, 0.0)
-	timer_label.text = "%d" % ceili(time_left)
+	ui.set_time(time_left, time_total)
+
+	# The human only sees the mosquito while it is inside the flashlight beam.
+	if me_is_human and not match_over:
+		mosquito.visible = human.is_lit(mosquito.global_position, 10.0)
+	else:
+		mosquito.visible = true
+
+	var now := Time.get_ticks_msec()
+	ui.set_human_stats(human_hp, human_max_hp,
+		_fraction(slap_cd_end, slap_cd_total, now), maxf((stun_end - now) / 1000.0, 0.0))
+	ui.set_mosquito_stats(mosquito_alive,
+		_fraction(bite_cd_end, bite_cd_total, now), maxf((boost_end - now) / 1000.0, 0.0))
 
 
-# ---------------- requests (host side resolution) ----------------
+func _fraction(end_msec: int, total: float, now: int) -> float:
+	if now >= end_msec or total <= 0.0:
+		return 1.0
+	return clampf(1.0 - ((end_msec - now) / 1000.0) / total, 0.0, 1.0)
+
+
+# ---------------------------------------------------------------- requests (host side resolution)
 
 func _on_human_slap_requested() -> void:
 	if manager == null:
@@ -165,7 +262,7 @@ func _resolve_bite() -> void:
 	manager.attempt_bite(did_hit)
 
 
-# ---------------- manager signals (host only) -> broadcast ----------------
+# ---------------------------------------------------------------- manager signals (host only) -> broadcast
 
 func _on_match_started(duration: float) -> void:
 	if Network.online:
@@ -174,49 +271,59 @@ func _on_match_started(duration: float) -> void:
 		_rpc_match_started(duration)
 
 
-func _on_human_hp_changed(current: int, _max_hp: int) -> void:
+func _on_human_hp_changed(current: int, max_hp: int) -> void:
 	if Network.online:
-		_rpc_hp.rpc(current)
+		_rpc_hp.rpc(current, max_hp)
 	else:
-		_rpc_hp(current)
+		_rpc_hp(current, max_hp)
 
 
-func _on_human_stunned(_duration: float) -> void:
+func _on_human_stunned(duration: float) -> void:
 	if Network.online:
-		_rpc_stun.rpc(true)
+		_rpc_stun.rpc(true, duration)
 	else:
-		_rpc_stun(true)
+		_rpc_stun(true, duration)
 
 
 func _on_human_recovered() -> void:
 	if Network.online:
-		_rpc_stun.rpc(false)
+		_rpc_stun.rpc(false, 0.0)
 	else:
-		_rpc_stun(false)
+		_rpc_stun(false, 0.0)
 
 
-func _on_mosquito_boost_started(_duration: float) -> void:
-	# A successful bite also starts the bite cooldown.
+func _on_mosquito_boost_started(duration: float) -> void:
+	# A successful bite also starts the (long) bite cooldown.
+	var cd: float = manager.bite_cooldown
 	if Network.online:
-		_rpc_boost.rpc(true)
-		_rpc_bite_cd.rpc(manager.bite_cooldown)
+		_rpc_boost.rpc(true, duration)
+		_rpc_bite_cd.rpc(cd)
 	else:
-		_rpc_boost(true)
-		_rpc_bite_cd(manager.bite_cooldown)
+		_rpc_boost(true, duration)
+		_rpc_bite_cd(cd)
 
 
 func _on_mosquito_boost_ended() -> void:
 	if Network.online:
-		_rpc_boost.rpc(false)
+		_rpc_boost.rpc(false, 0.0)
 	else:
-		_rpc_boost(false)
+		_rpc_boost(false, 0.0)
 
 
 func _on_slap_resolved(hit: bool) -> void:
+	var cd: float = manager.slap_cooldown
 	if Network.online:
-		_rpc_slap.rpc(hit)
+		_rpc_slap.rpc(hit, cd)
 	else:
-		_rpc_slap(hit)
+		_rpc_slap(hit, cd)
+
+
+func _on_bite_resolved(hit: bool) -> void:
+	var miss_cd: float = manager.bite_miss_cooldown
+	if Network.online:
+		_rpc_bite.rpc(hit, miss_cd)
+	else:
+		_rpc_bite(hit, miss_cd)
 
 
 func _on_match_ended(winner: int, reason: int) -> void:
@@ -226,111 +333,103 @@ func _on_match_ended(winner: int, reason: int) -> void:
 		_rpc_end(winner, reason)
 
 
-# ---------------- replicated effects (run on every peer) ----------------
+# ---------------------------------------------------------------- replicated effects (run on every peer)
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_match_started(duration: float) -> void:
 	time_left = duration
+	time_total = duration
 	match_running = true
+	ui.toast("HUNT!", UiTheme.COL_ACCENT)
 
 
 @rpc("authority", "call_local", "reliable")
-func _rpc_hp(current: int) -> void:
+func _rpc_hp(current: int, max_hp: int) -> void:
+	human_hp = current
+	human_max_hp = max_hp
 	human.set_hp_display(current)
 
 
 @rpc("authority", "call_local", "reliable")
-func _rpc_stun(stunned: bool) -> void:
+func _rpc_stun(stunned: bool, duration: float) -> void:
 	human.set_stunned(stunned)
+	stun_end = Time.get_ticks_msec() + int(duration * 1000.0) if stunned else 0
 
 
 @rpc("authority", "call_local", "reliable")
-func _rpc_boost(boosted: bool) -> void:
+func _rpc_boost(boosted: bool, duration: float) -> void:
 	mosquito.set_boosted(boosted)
+	boost_end = Time.get_ticks_msec() + int(duration * 1000.0) if boosted else 0
 
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_bite_cd(duration: float) -> void:
+	bite_cd_total = duration
+	bite_cd_end = Time.get_ticks_msec() + int(duration * 1000.0)
 	mosquito.start_cooldown(duration)
 
 
+# The mosquito really bit (hit or miss): lunge animation, sound, damage feedback.
 @rpc("authority", "call_local", "reliable")
-func _rpc_slap(hit: bool) -> void:
-	human.start_cooldown(manager.slap_cooldown if manager else 0.5)
+func _rpc_bite(hit: bool, miss_cooldown: float) -> void:
+	mosquito.play_bite_animation(human.global_position)
 	if hit:
-		human.play_hit_animation()
-		mosquito.die()
+		Sfx.bite()
+		human.play_hurt()
+		ui.toast("BITTEN!  -1 HP", UiTheme.COL_MOSQUITO)
+		if me_is_human:
+			ui.flash(Color(1, 0, 0))
 	else:
+		# Missed bite: short cooldown so it can't be spammed.
+		bite_cd_total = miss_cooldown
+		bite_cd_end = Time.get_ticks_msec() + int(miss_cooldown * 1000.0)
+		mosquito.start_cooldown(miss_cooldown)
+
+
+# The human really swung the racket (only when he clicked and was allowed to).
+@rpc("authority", "call_local", "reliable")
+func _rpc_slap(hit: bool, cooldown: float) -> void:
+	slap_cd_total = cooldown
+	slap_cd_end = Time.get_ticks_msec() + int(cooldown * 1000.0)
+	human.start_cooldown(cooldown)
+	if hit:
+		Sfx.zap()
+		human.play_hit_animation()
+		mosquito_alive = false
+		mosquito.die()
+		ui.toast("ZAP!", UiTheme.COL_ACCENT)
+		if not me_is_human:
+			ui.flash(Color(1, 1, 0.3))
+	else:
+		Sfx.woosh()
 		human.play_hitting_animation()
 
 
 @rpc("authority", "call_local", "reliable")
 func _rpc_end(winner: int, reason: int) -> void:
 	match_running = false
+	match_over = true
 	human.set_input_enabled(false)
 	mosquito.set_input_enabled(false)
+	darkness.visible = false  # lights on: everybody sees everything
+	mosquito.visible = true
+	if mosquito.buzz != null:
+		mosquito.buzz.stop()
 
-	var i_am_human := (not Network.online) or multiplayer.is_server()
-	var human_won := winner == 1  # GameManager.Winner.HUMAN
+	var human_won: bool = winner == 1  # GameManager.Winner.HUMAN
+	var won: bool = human_won == me_is_human
 	var text := ""
-	if human_won == i_am_human:
-		text = "YOU WIN!"
-	else:
-		text = "YOU LOSE"
 	match reason:
-		1: text += "\nThe moustique was squashed."
-		2: text += "\nThe human lost all their HP."
-		3: text += "\nTime is up, the moustique escaped."
-	end_label.text = text
-	end_layer.visible = true
-
-
-# ---------------- UI ----------------
-
-func _build_overlay() -> void:
-	var layer := CanvasLayer.new()
-	add_child(layer)
-	timer_label = Label.new()
-	timer_label.position = Vector2(20, 10)
-	timer_label.add_theme_font_size_override("font_size", 28)
-	layer.add_child(timer_label)
-
-	debug_label = Label.new()
-	debug_label.position = Vector2(20, 50)
-	debug_label.modulate = Color(1, 1, 0.4)
-	debug_label.visible = false
-	layer.add_child(debug_label)
-
-	end_layer = CanvasLayer.new()
-	end_layer.visible = false
-	end_layer.layer = 20
-	add_child(end_layer)
-
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.7)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	end_layer.add_child(dim)
-
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	end_layer.add_child(center)
-
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 20)
-	center.add_child(box)
-
-	end_label = Label.new()
-	end_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	end_label.add_theme_font_size_override("font_size", 40)
-	box.add_child(end_label)
-
-	var back := Button.new()
-	back.text = "Back to lobby"
-	back.pressed.connect(func(): Network.go_to_lobby())
-	box.add_child(back)
+		1:
+			text = "The mosquito was zapped by the racket." if me_is_human else "You got zapped by the racket."
+		2:
+			text = "The mosquito drained all your HP." if me_is_human else "You drained all the human's HP!"
+		3:
+			text = "Time is up: the mosquito escaped." if me_is_human else "Time is up: you survived!"
+	ui.show_end("VICTORY!" if won else "DEFEAT", text, won, not Network.online)
 
 
 func _on_connection_lost() -> void:
 	match_running = false
-	end_label.text = "The other player disconnected."
-	end_layer.visible = true
+	match_over = true
+	ui.show_end("DISCONNECTED", "The other player left the game.", false, false)
