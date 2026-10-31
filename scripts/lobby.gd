@@ -7,11 +7,13 @@ var play_button: Button
 var host_button: Button
 var join_button: Button
 var ip_edit: LineEdit
+var music_button: Button
+var credits_window: Control
 
 
 func _ready() -> void:
 	theme = UiTheme.make()
-	Sfx.stop_music()
+	Sfx.play_music()
 	_build_ui()
 	Network.players_changed.connect(_on_players_changed)
 	Network.join_failed.connect(_on_join_failed)
@@ -53,7 +55,7 @@ func _text(parent: Control, text: String, color: Color = UiTheme.COL_TEXT, size:
 
 func _build_ui() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color("0a0b13")
+	bg.color = Color("120b1c")
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
@@ -81,7 +83,7 @@ func _build_ui() -> void:
 	title.add_theme_font_size_override("font_size", 34)
 	title.add_theme_font_override("font", UiTheme.font(true))
 	title.add_theme_color_override("font_color", UiTheme.COL_ACCENT)
-	title.add_theme_color_override("font_outline_color", Color("5a1010"))
+	title.add_theme_color_override("font_outline_color", Color("40104a"))
 	title.add_theme_constant_override("outline_size", 8)
 	root.add_child(title)
 	var sub := Label.new()
@@ -139,7 +141,7 @@ func _build_ui() -> void:
 	net.add_child(play_button)
 
 	# --- solo debug window ---
-	var dbg := _window("SOLO TEST  (no network)", Color("6f7399"))
+	var dbg := _window("SOLO TEST  (no network)", Color("8a6aa8"))
 	root.add_child(dbg.get_parent())
 	var drow := HBoxContainer.new()
 	drow.add_theme_constant_override("separation", 6)
@@ -155,6 +157,62 @@ func _build_ui() -> void:
 	dbg_mosq.pressed.connect(func(): Network.start_debug("mosquito"))
 	drow.add_child(dbg_mosq)
 	_text(dbg, "Same game as online. In game: TAB swaps role, R restarts, M toggles music.", UiTheme.COL_DIM, 10)
+
+	# --- always-visible music + credits buttons (top corners) ---
+	music_button = Button.new()
+	music_button.focus_mode = Control.FOCUS_NONE
+	music_button.position = Vector2(8, 8)
+	music_button.pressed.connect(func(): Sfx.toggle_music())
+	add_child(music_button)
+	Sfx.music_changed.connect(_on_music_changed)
+	_on_music_changed(Sfx.music_enabled)
+
+	var credits_button := Button.new()
+	credits_button.text = "Credits"
+	credits_button.focus_mode = Control.FOCUS_NONE
+	credits_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	credits_button.offset_left = -80
+	credits_button.offset_top = 8
+	credits_button.offset_right = -8
+	credits_button.pressed.connect(func(): credits_window.visible = true)
+	add_child(credits_button)
+	_build_credits()
+
+
+func _build_credits() -> void:
+	credits_window = Control.new()
+	credits_window.set_anchors_preset(Control.PRESET_FULL_RECT)
+	credits_window.visible = false
+	add_child(credits_window)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.75)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	credits_window.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	credits_window.add_child(center)
+	var win := _window("CREDITS", UiTheme.COL_ACCENT)
+	win.get_parent().custom_minimum_size = Vector2(380, 0)
+	center.add_child(win.get_parent())
+	var big := _text(win, "Game created by IGD students\nVivian (M2) and Lou-Ann (M1)", UiTheme.COL_TEXT, 14)
+	big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var sub := _text(win, "It was Vivian's idea and plan.\nLou-Ann designed all the assets.\nWe both implemented the game together!", UiTheme.COL_DIM, 11)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var close := Button.new()
+	close.text = "Close"
+	close.pressed.connect(func(): credits_window.visible = false)
+	win.add_child(close)
+
+
+func _on_music_changed(enabled: bool) -> void:
+	if music_button != null:
+		music_button.text = "Music: ON  (M)" if enabled else "Music: OFF (M)"
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_M and not ip_edit.has_focus():
+		Sfx.toggle_music()
 
 
 func _on_host_pressed() -> void:

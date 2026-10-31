@@ -39,18 +39,25 @@ class StatPanel extends PanelContainer:
 		v.add_theme_constant_override("separation", 3)
 		add_child(v)
 
+		var title_row := HBoxContainer.new()
+		v.add_child(title_row)
 		name_label = Label.new()
 		name_label.text = role_name
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_label.add_theme_color_override("font_color", color)
 		name_label.add_theme_font_override("font", UiTheme.font(true))
-		v.add_child(name_label)
+		title_row.add_child(name_label)
+		status_label = Label.new()
+		status_label.text = " "
+		status_label.add_theme_font_size_override("font_size", 10)
+		title_row.add_child(status_label)
 
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
 		v.add_child(row)
 
 		heart = TextureRect.new()
-		heart.custom_minimum_size = Vector2(28, 28)
+		heart.custom_minimum_size = Vector2(24, 24)
 		heart.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		heart.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		heart.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -74,10 +81,6 @@ class StatPanel extends PanelContainer:
 		_fill = UiTheme.fill_box(color)
 		bar.add_theme_stylebox_override("fill", _fill)
 		v.add_child(bar)
-
-		status_label = Label.new()
-		status_label.text = " "
-		v.add_child(status_label)
 
 	func set_heart(tex: Texture2D, text: String) -> void:
 		heart.texture = tex
@@ -143,7 +146,7 @@ func _build_flash() -> void:
 
 func _build_side_panel() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color("0c0d16")
+	bg.color = Color("100a1a")
 	bg.position = Vector2(ARENA_W, 0)
 	bg.size = Vector2(SCREEN_W - ARENA_W, SCREEN_H)
 	_root.add_child(bg)
@@ -164,7 +167,7 @@ func _build_side_panel() -> void:
 	_root.add_child(margin)
 
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 5)
+	col.add_theme_constant_override("separation", 4)
 	margin.add_child(col)
 
 	# --- timer window ---
@@ -174,14 +177,14 @@ func _build_side_panel() -> void:
 	tv.add_theme_constant_override("separation", 2)
 	timer_box.add_child(tv)
 	var tcap := Label.new()
-	tcap.text = "TIME LEFT"
+	tcap.text = "TIME"
 	tcap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tcap.add_theme_color_override("font_color", UiTheme.COL_DIM)
 	tv.add_child(tcap)
 	timer_label = Label.new()
 	timer_label.text = "--"
 	timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	timer_label.add_theme_font_size_override("font_size", 26)
+	timer_label.add_theme_font_size_override("font_size", 22)
 	timer_label.add_theme_font_override("font", UiTheme.font(true))
 	tv.add_child(timer_label)
 	timer_bar = ProgressBar.new()
@@ -312,16 +315,16 @@ func set_roles(me_is_human: bool) -> void:
 	your_slot.add_child(mine)
 	enemy_slot.add_child(theirs)
 	if me_is_human:
-		controls_label.text = "WASD / arrows: move\nMouse: aim flashlight\nLeft click: SLAP (zap!)\nYou only see what your light shows."
+		controls_label.text = "WASD move - mouse aims\nClick: SLAP (zap!)"
 	else:
-		controls_label.text = "WASD / arrows: move\nLeft click: BITE the human\nThe red dot is the human.\nDon't get zapped!"
+		controls_label.text = "WASD move - mouse aims\nClick: BITE (red dot = human)"
 
 
 func set_time(left: float, total: float) -> void:
 	timer_label.text = "%d" % ceili(left)
 	timer_bar.value = clampf(left / maxf(total, 0.001), 0.0, 1.0)
 	var urgent := left <= 10.0 and left > 0.0
-	timer_label.add_theme_color_override("font_color", UiTheme.COL_MOSQUITO if urgent else UiTheme.COL_TEXT)
+	timer_label.add_theme_color_override("font_color", UiTheme.COL_DANGER if urgent else UiTheme.COL_TEXT)
 
 
 func set_human_stats(hp: int, max_hp: int, slap_fraction: float, stun_left: float) -> void:
@@ -336,7 +339,7 @@ func set_human_stats(hp: int, max_hp: int, slap_fraction: float, stun_left: floa
 	var ready := slap_fraction >= 1.0
 	human_panel.set_bar(slap_fraction, "SLAP  READY" if ready else "SLAP  recharging", ready)
 	if stun_left > 0.0:
-		human_panel.set_status("STUNNED %.1fs" % stun_left, UiTheme.COL_MOSQUITO)
+		human_panel.set_status("STUNNED %.1fs" % stun_left, UiTheme.COL_DANGER)
 	else:
 		human_panel.set_status("ok", UiTheme.COL_DIM)
 
@@ -346,7 +349,7 @@ func set_mosquito_stats(alive: bool, bite_fraction: float, boost_left: float) ->
 	var ready := bite_fraction >= 1.0
 	mosquito_panel.set_bar(bite_fraction, "BITE  READY" if ready else "BITE  recharging", ready)
 	if not alive:
-		mosquito_panel.set_status("SQUASHED", UiTheme.COL_MOSQUITO)
+		mosquito_panel.set_status("SQUASHED", UiTheme.COL_DANGER)
 	elif boost_left > 0.0:
 		mosquito_panel.set_status("SPEED BOOST!", UiTheme.COL_GOOD)
 	else:
@@ -373,13 +376,13 @@ func flash(color: Color) -> void:
 
 
 func set_debug_text(text: String) -> void:
-	debug_label.text = text
+	debug_label.text = text.replace("\n", "  ")
 	debug_label.visible = text != ""
 
 
 func show_end(title: String, reason: String, won: bool, can_replay: bool) -> void:
 	end_title.text = title
-	end_title.add_theme_color_override("font_color", UiTheme.COL_GOOD if won else UiTheme.COL_MOSQUITO)
+	end_title.add_theme_color_override("font_color", UiTheme.COL_GOOD if won else UiTheme.COL_DANGER)
 	end_reason.text = reason
 	end_again.visible = can_replay
 	end_root.visible = true

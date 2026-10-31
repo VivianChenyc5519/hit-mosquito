@@ -6,15 +6,16 @@ extends RefCounted
 const FONT_REGULAR := "res://assets/font/static/PixelifySans-Regular.ttf"
 const FONT_BOLD := "res://assets/font/static/PixelifySans-Bold.ttf"
 
-const COL_TEXT := Color("e9e9f2")
-const COL_DIM := Color("8d90b3")
-const COL_PANEL := Color("171828")
-const COL_PANEL_DARK := Color("0f1019")
-const COL_BORDER := Color("464a78")
-const COL_ACCENT := Color("ffcf4a")   # flashlight yellow
-const COL_HUMAN := Color("ffcf4a")
-const COL_MOSQUITO := Color("ff5d5d")
-const COL_GOOD := Color("5dff9a")
+const COL_TEXT := Color("efe8f4")   # soft white (racket mesh)
+const COL_DIM := Color("a495bd")
+const COL_PANEL := Color("221832")   # deep plum (racket shadow)
+const COL_PANEL_DARK := Color("140e20")
+const COL_BORDER := Color("783880")  # racket purple
+const COL_ACCENT := Color("f8f0c0")   # electric spark yellow
+const COL_HUMAN := Color("f878d8")    # racket hot pink
+const COL_MOSQUITO := Color("70b0d8") # spark blue
+const COL_GOOD := Color("b0e0d8")      # mint (spark highlight)
+const COL_DANGER := Color("ff6a8a")
 
 
 static func font(bold: bool = false) -> Font:
@@ -51,28 +52,28 @@ static func make() -> Theme:
 	t.set_stylebox("panel", "Panel", box(COL_PANEL, COL_BORDER, 2))
 
 	# --- Buttons ---
-	t.set_stylebox("normal", "Button", box(Color("2a2c4a"), COL_BORDER, 2, 10, 5))
-	t.set_stylebox("hover", "Button", box(Color("3a3e69"), COL_ACCENT, 2, 10, 5))
-	t.set_stylebox("pressed", "Button", box(Color("1d1e36"), COL_ACCENT, 2, 10, 7))
-	t.set_stylebox("disabled", "Button", box(Color("181924"), Color("2c2d3f"), 2, 10, 5))
+	t.set_stylebox("normal", "Button", box(Color("3a2650"), COL_BORDER, 2, 10, 5))
+	t.set_stylebox("hover", "Button", box(Color("5a2e70"), COL_ACCENT, 2, 10, 5))
+	t.set_stylebox("pressed", "Button", box(Color("2a1a3c"), COL_ACCENT, 2, 10, 7))
+	t.set_stylebox("disabled", "Button", box(Color("1a1326"), Color("33264a"), 2, 10, 5))
 	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
 	t.set_color("font_color", "Button", COL_TEXT)
 	t.set_color("font_hover_color", "Button", COL_ACCENT)
 	t.set_color("font_pressed_color", "Button", COL_ACCENT)
-	t.set_color("font_disabled_color", "Button", Color("5c5e78"))
+	t.set_color("font_disabled_color", "Button", Color("6a5c82"))
 	t.set_font_size("font_size", "Button", 12)
 
 	# --- Text input ---
 	t.set_stylebox("normal", "LineEdit", box(COL_PANEL_DARK, COL_BORDER, 2, 8, 5))
 	t.set_stylebox("focus", "LineEdit", box(COL_PANEL_DARK, COL_ACCENT, 2, 8, 5))
-	t.set_stylebox("read_only", "LineEdit", box(Color("14151f"), Color("2c2d3f"), 2, 8, 5))
+	t.set_stylebox("read_only", "LineEdit", box(Color("140e20"), Color("33264a"), 2, 8, 5))
 	t.set_color("font_color", "LineEdit", COL_TEXT)
 	t.set_color("font_uneditable_color", "LineEdit", COL_DIM)
-	t.set_color("font_placeholder_color", "LineEdit", Color("5c5e78"))
+	t.set_color("font_placeholder_color", "LineEdit", Color("6a5c82"))
 	t.set_color("caret_color", "LineEdit", COL_ACCENT)
 
 	# --- Progress bars (cooldowns) ---
-	var bar_bg := box(COL_PANEL_DARK, Color("2c2d3f"), 1, 0, 0)
+	var bar_bg := box(COL_PANEL_DARK, Color("33264a"), 1, 0, 0)
 	var bar_fill := box(COL_ACCENT, COL_ACCENT, 0, 0, 0)
 	t.set_stylebox("background", "ProgressBar", bar_bg)
 	t.set_stylebox("fill", "ProgressBar", bar_fill)

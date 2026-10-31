@@ -64,8 +64,12 @@ var _remote_moving: bool = false
 func _physics_process(_delta: float) -> void:
 	if is_multiplayer_authority():
 		handle_movement()
+		if input_enabled and not is_dying and not is_dead:
+			var d: Vector2 = get_global_mouse_position() - global_position
+			if d.length() > 4.0:
+				mosquito_sprite.rotation = lerp_angle(mosquito_sprite.rotation, d.angle() + PI / 2.0, 0.35)
 		if Network.online:
-			_net_sync.rpc(global_position)
+			_net_sync.rpc(global_position, mosquito_sprite.rotation)
 	else:
 		# Remote copy: only derive the animation from the received movement.
 		_remote_moving = global_position.distance_to(_last_pos) > 0.1
@@ -75,8 +79,9 @@ func _physics_process(_delta: float) -> void:
 
 
 @rpc("authority", "unreliable")
-func _net_sync(pos: Vector2) -> void:
+func _net_sync(pos: Vector2, rot: float) -> void:
 	global_position = pos
+	mosquito_sprite.rotation = rot
 
 
 func handle_movement() -> void:

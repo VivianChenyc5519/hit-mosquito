@@ -5,18 +5,23 @@ extends Node2D
 
 const GameManager = preload("res://scripts/game_manager.gd")
 const HumanSensor = preload("res://scripts/human_sensor.gd")
+const MapWalls = preload("res://scripts/map_walls.gd")
 const START_DELAY := 1.0  # lets both peers finish loading the scene before the match starts
 
 # --- Map options (edit in the Inspector on the Game node) ---
-# Invisible walls around the screen. Turn OFF when you add your own collision walls to the map.
-@export var use_room_bounds: bool = true
-# Colour of the floor (the empty space between wall tiles). The flashlight reveals it for the human.
-@export var floor_color: Color = Color(0.5, 0.52, 0.6, 1.0)
-# Darkness seen by the human (outside of the flashlight).
-@export var darkness_color: Color = Color(0.012, 0.012, 0.025, 1.0)
-# Where the players start (must be on empty floor, not inside a wall tile).
-@export var human_spawn: Vector2 = Vector2(72, 152)
-@export var mosquito_spawn: Vector2 = Vector2(400, 360)
+# Builds collision walls automatically: every EMPTY cell of "TileMapLayer" (+ the outside of the map) is solid.
+# Turn OFF if you place your own collision walls by hand.
+@export var auto_wall_collision: bool = true
+# How close the camera is to the action (1 = whole map visible, 2 = half of it).
+@export var camera_zoom: float = 2.0
+# Human view: very dark except the flashlight. Mosquito view: a bit darker, flashlight still visible.
+@export var human_darkness: Color = Color(0.08, 0.05, 0.11, 1.0)
+@export var mosquito_darkness: Color = Color(0.46, 0.38, 0.54, 1.0)
+@export var human_wall_dim: Color = Color(0.5, 0.5, 0.55, 1.0)
+@export var mosquito_wall_dim: Color = Color(0.9, 0.9, 0.95, 1.0)
+# Where the players start (must be on the brown floor).
+@export var human_spawn: Vector2 = Vector2(100, 100)
+@export var mosquito_spawn: Vector2 = Vector2(540, 280)
 
 enum TestPlayer { HUMAN, MOSQUITO }
 # Only used when you run this scene directly (no network) for debugging.
@@ -28,6 +33,9 @@ var manager
 
 var ui: GameUI
 var darkness: CanvasModulate
+var cam: Camera2D
+var map_walls: MapWalls
+var map_rect: Rect2 = Rect2(0, 0, 640, 384)
 var sensor_node: HumanSensor
 
 var me_is_human: bool = true
@@ -61,9 +69,10 @@ func _ready() -> void:
 	ui.play_again_pressed.connect(func(): get_tree().reload_current_scene())
 
 	RenderingServer.set_default_clear_color(Color.BLACK)
-	_setup_map_visuals()
-	if use_room_bounds:
-		_build_boundaries()
+	human.z_index = 5
+	mosquito.z_index = 5
+	_setup_map()
+	_setup_camera()
 
 	# Spawn points (the mosquito used to start at 0,0 = inside the wall).
 	human.global_position = human_spawn
@@ -97,49 +106,92 @@ func _ready() -> void:
 
 # ---------------------------------------------------------------- map
 
-# Floor + walls. All tiles of "TileMapLayer" are walls: they are drawn UNSHADED, so the human always
-# sees them even in the dark. The floor is a plain rectangle that only the flashlight can reveal.
-func _setup_map_visuals() -> void:
-	var floor_rect := ColorRect.new()
-	floor_rect.name = "Floor"
-	floor_rect.color = floor_color
-	floor_rect.position = Vector2.ZERO
-	floor_rect.size = Vector2(640, 384)
-	floor_rect.z_index = -100
-	floor_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(floor_rect)
-	move_child(floor_rect, 0)
-
+# The brown tiles are the FLOOR. Every empty cell (and everything outside) is a wall.
+func _setup_map() -> void:
 	var tm := get_node_or_null("TileMapLayer") as TileMapLayer
-	if tm != null:
-		var unshaded := CanvasItemMaterial.new()
-		unshaded.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-		tm.material = unshaded
+	if tm == null:
+		return
+	var tile: int = 16
+	if tm.tile_set != null:
+		tile = tm.tile_set.tile_size.x
+	var used: Rect2i = tm.get_used_rect()
+	map_rect = Rect2(Vector2(used.position) * tile, Vector2(used.size) * tile)
+
+	var floor_lookup: Dictionary = {}
+	for c in tm.get_used_cells():
+		floor_lookup[c] = true
+	var wall_cells: Array[Vector2i] = []
+	for y in range(used.position.y, used.end.y):
+		for x in range(used.position.x, used.end.x):
+			if not floor_lookup.has(Vector2i(x, y)):
+				wall_cells.append(Vector2i(x, y))
+
+	# wall look (always visible, dimmed per role in _setup_role)
+	map_walls = MapWalls.new()
+	map_walls.name = "MapWalls"
+	map_walls.tile = tile
+	map_walls.wall_cells = wall_cells
+	map_walls.floor_lookup = floor_lookup
+	var unshaded := CanvasItemMaterial.new()
+	unshaded.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	map_walls.material = unshaded
+	add_child(map_walls)
+	move_child(map_walls, tm.get_index() + 1)
+
+	if auto_wall_collision:
+		_build_collision(wall_cells, floor_lookup, tile, used)
 
 
-func _build_boundaries() -> void:
-	# The room is 40x24 tiles of 16px; the outer ring of tiles is the wall.
-	# The "Walls" node has no collision shapes, so players could walk out of the room.
-	# Only these invisible walls collide with the characters (layer 1). Racket and mosquito never
-	# collide with each other: they only "hit or miss" through their Area2D.
-	var inner := Rect2(16, 16, 608, 352)
-	var thick := 64.0
+# One rectangle per horizontal run of wall cells + a thick frame around the map.
+func _build_collision(wall_cells: Array[Vector2i], _floor_lookup: Dictionary, tile: int, used: Rect2i) -> void:
 	var body := StaticBody2D.new()
-	body.name = "RoomBounds"
-	var rects: Array[Rect2] = [
-		Rect2(inner.position.x - thick, inner.position.y - thick, inner.size.x + 2 * thick, thick),  # top
-		Rect2(inner.position.x - thick, inner.end.y, inner.size.x + 2 * thick, thick),               # bottom
-		Rect2(inner.position.x - thick, inner.position.y, thick, inner.size.y),                      # left
-		Rect2(inner.end.x, inner.position.y, thick, inner.size.y),                                   # right
-	]
-	for r in rects:
-		var shape := RectangleShape2D.new()
-		shape.size = r.size
-		var cs := CollisionShape2D.new()
-		cs.shape = shape
-		cs.position = r.position + r.size / 2.0
-		body.add_child(cs)
+	body.name = "MapCollision"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var is_wall: Dictionary = {}
+	for c in wall_cells:
+		is_wall[c] = true
+	for y in range(used.position.y, used.end.y):
+		var x: int = used.position.x
+		while x < used.end.x:
+			if is_wall.has(Vector2i(x, y)):
+				var start: int = x
+				while x < used.end.x and is_wall.has(Vector2i(x, y)):
+					x += 1
+				_add_rect(body, Rect2(start * tile, y * tile, (x - start) * tile, tile))
+			else:
+				x += 1
+	var t := 128.0
+	var r := map_rect
+	_add_rect(body, Rect2(r.position.x - t, r.position.y - t, r.size.x + 2 * t, t))
+	_add_rect(body, Rect2(r.position.x - t, r.end.y, r.size.x + 2 * t, t))
+	_add_rect(body, Rect2(r.position.x - t, r.position.y, t, r.size.y))
+	_add_rect(body, Rect2(r.end.x, r.position.y, t, r.size.y))
 	add_child(body)
+
+
+func _add_rect(body: StaticBody2D, r: Rect2) -> void:
+	var shape := RectangleShape2D.new()
+	shape.size = r.size
+	var cs := CollisionShape2D.new()
+	cs.shape = shape
+	cs.position = r.position + r.size / 2.0
+	body.add_child(cs)
+
+
+# Camera: follows MY character and stops at the map edges (screen = 800x384, arena part = 640 wide).
+func _setup_camera() -> void:
+	cam = Camera2D.new()
+	cam.zoom = Vector2(camera_zoom, camera_zoom)
+	cam.offset = Vector2(80.0 / camera_zoom, 0.0)  # keeps the player centred in the arena part (left 640 px)
+	# (Camera limits are applied before the offset, so the offset is subtracted here.)
+	cam.limit_left = int(map_rect.position.x - cam.offset.x)
+	cam.limit_top = int(map_rect.position.y)
+	cam.limit_right = int(map_rect.end.x + 160.0 / camera_zoom - cam.offset.x)
+	cam.limit_bottom = int(map_rect.end.y)
+	cam.position_smoothing_enabled = false
+	add_child(cam)
+	cam.make_current()
 
 
 # ---------------------------------------------------------------- roles / vision
@@ -149,10 +201,19 @@ func _setup_role(is_human: bool) -> void:
 	human.set_input_enabled(is_human)
 	mosquito.set_input_enabled(not is_human)
 
-	# Human: pitch black except the flashlight. Mosquito: sees the whole room.
-	darkness.color = darkness_color
-	darkness.visible = is_human and not match_over
-	human.set_vision_enabled(is_human)
+	# Human: map almost black, only the flashlight shows the floor, mosquito only visible in the beam.
+	# Mosquito: map a bit darker, and it still sees where the human's flashlight is pointing.
+	darkness.color = human_darkness if is_human else mosquito_darkness
+	darkness.visible = not match_over
+	human.set_vision_enabled(true)  # the beam exists for both players
+	if map_walls != null:
+		map_walls.modulate = human_wall_dim if is_human else mosquito_wall_dim
+	# the mosquito always sees itself
+	var mat: CanvasItemMaterial = null
+	if not is_human:
+		mat = CanvasItemMaterial.new()
+		mat.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	mosquito.mosquito_sprite.material = mat
 
 	# Ears: the human hears the buzz get louder when it gets closer.
 	if is_human:
@@ -210,6 +271,11 @@ func _process(delta: float) -> void:
 	if match_running:
 		time_left = maxf(time_left - delta, 0.0)
 	ui.set_time(time_left, time_total)
+
+	# Camera follows the character I control.
+	if cam != null:
+		var target: Node2D = human if me_is_human else mosquito
+		cam.global_position = target.global_position
 
 	# The human only sees the mosquito while it is inside the flashlight beam.
 	if me_is_human and not match_over:
@@ -376,9 +442,9 @@ func _rpc_bite(hit: bool, miss_cooldown: float) -> void:
 	if hit:
 		Sfx.bite()
 		human.play_hurt()
-		ui.toast("BITTEN!  -1 HP", UiTheme.COL_MOSQUITO)
+		ui.toast("BITTEN!  -1 HP", UiTheme.COL_DANGER)
 		if me_is_human:
-			ui.flash(Color(1, 0, 0))
+			ui.flash(Color(1.0, 0.2, 0.4))
 	else:
 		# Missed bite: short cooldown so it can't be spammed.
 		bite_cd_total = miss_cooldown
@@ -399,7 +465,7 @@ func _rpc_slap(hit: bool, cooldown: float) -> void:
 		mosquito.die()
 		ui.toast("ZAP!", UiTheme.COL_ACCENT)
 		if not me_is_human:
-			ui.flash(Color(1, 1, 0.3))
+			ui.flash(Color(0.97, 0.94, 0.75))
 	else:
 		Sfx.woosh()
 		human.play_hitting_animation()
@@ -412,6 +478,8 @@ func _rpc_end(winner: int, reason: int) -> void:
 	human.set_input_enabled(false)
 	mosquito.set_input_enabled(false)
 	darkness.visible = false  # lights on: everybody sees everything
+	if map_walls != null:
+		map_walls.modulate = Color.WHITE
 	mosquito.visible = true
 	if mosquito.buzz != null:
 		mosquito.buzz.stop()

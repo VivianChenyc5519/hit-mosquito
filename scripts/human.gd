@@ -61,9 +61,15 @@ func _physics_process(_delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
 	handle_movement()
-	handle_aim(_delta)
+	if input_enabled:
+		handle_aim(_delta)  # aiming works while moving, the mouse is independent from the keyboard
 	if Network.online:
 		_net_sync.rpc(global_position, racket_pivot.rotation)
+
+
+func _process(_delta: float) -> void:
+	# The racket HEAD points where the mouse aims (art: head up = rotation 0).
+	racket_sprite.rotation = racket_pivot.rotation + PI / 2.0
 
 
 @rpc("authority", "unreliable")

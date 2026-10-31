@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://bj3e1um2igvry" path="res://scripts/human.gd" id="1_fvi3j"]
 [ext_resource type="Texture2D" uid="uid://btlke47w2aeos" path="res://assets/r_hit.png" id="1_p3awx"]
-[ext_resource type="Texture2D" uid="uid://cnn83octq3ytn" path="res://assets/racket-texture.png" id="2_37dsl"]
 [ext_resource type="Texture2D" uid="uid://80rk3i257v1g" path="res://assets/heart_75.png" id="3_1uy56"]
 [ext_resource type="Texture2D" uid="uid://dt68jfo74wuuk" path="res://assets/light-texture.png" id="3_2ivwl"]
 [ext_resource type="Texture2D" uid="uid://d1iihcgm06ujo" path="res://assets/heart_50.png" id="4_j2vgf"]
@@ -84,7 +83,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_1uy56")
 }],
-"loop": false,
+"loop": 0,
 "name": &"hit",
 "speed": 15.0
 }, {
@@ -95,7 +94,7 @@ animations = [{
 "duration": 1.5,
 "texture": SubResource("AtlasTexture_2f5s2")
 }],
-"loop": false,
+"loop": 0,
 "name": &"hitting",
 "speed": 14.0
 }, {
@@ -113,7 +112,6 @@ animations = [{
 [node name="Racket" type="CharacterBody2D" unique_id=766657232]
 position = Vector2(100, 100)
 collision_layer = 16
-collision_mask = 1
 script = ExtResource("1_fvi3j")
 heart_full = ExtResource("5_87xxb")
 heart_75 = ExtResource("3_1uy56")
@@ -146,15 +144,16 @@ collision_layer = 4
 collision_mask = 2
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="RacketPivot/SlapArea" unique_id=272696309]
-position = Vector2(0.13125038, 0)
-scale = Vector2(1.0106708, 1)
+position = Vector2(-4.717619, 0)
+scale = Vector2(0.7016912, 1)
 polygon = PackedVector2Array(0, 1, 52.310562, -16, 51.32112, 12)
 
 [node name="RacketSprite" type="AnimatedSprite2D" parent="." unique_id=1987754250]
-position = Vector2(-3, 14)
+position = Vector2(-3, -2)
 sprite_frames = SubResource("SpriteFrames_g2yis")
 animation = &"hit"
 frame_progress = 0.8381526
+offset = Vector2(0, 16)
 
 [node name="HurtArea" type="Area2D" parent="." unique_id=377158183]
 collision_layer = 8
