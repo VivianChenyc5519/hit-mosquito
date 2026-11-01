@@ -108,6 +108,7 @@ animations = [{
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_4ghau"]
+radius = 9.561715
 
 [node name="Racket" type="CharacterBody2D" unique_id=766657232]
 position = Vector2(100, 100)
@@ -159,11 +160,10 @@ offset = Vector2(0, 16)
 collision_layer = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtArea" unique_id=1905454817]
-visible = false
-position = Vector2(-3, 7)
+position = Vector2(-3, 10)
 scale = Vector2(2.72, 4.255)
 shape = SubResource("CircleShape2D_4ghau")
 
 [node name="HealthBar" type="Sprite2D" parent="." unique_id=1978185686]
-position = Vector2(-3, 55)
+position = Vector2(-3, 41)
 texture = ExtResource("5_87xxb")
