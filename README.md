@@ -1,12 +1,12 @@
-Hit That Moustique !
+# Hit That Moustique !
 
-by Vivian chen and Lou-Ann Coquard-Morel
+*by Vivian chen and Lou-Ann Coquard-Morel*
 
 <img width="2796" height="1332" alt="mosquito2" src="https://github.com/user-attachments/assets/54a3aa0a-b1dd-43fd-9423-7ae6113486eb" />
 
 <img width="2795" height="1364" alt="mosquito1" src="https://github.com/user-attachments/assets/ffc7e7c5-5028-456e-9992-c9103bdb4dbf" />
 
-## How to connect
+# How to play
 
 ### The host
 
