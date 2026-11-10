@@ -6,7 +6,24 @@ by Vivian chen and Lou-Ann Coquard-Morel
 
 <img width="2795" height="1364" alt="mosquito1" src="https://github.com/user-attachments/assets/ffc7e7c5-5028-456e-9992-c9103bdb4dbf" />
 
+## How to connect
 
+### The host
+
+Open the game and click “Host (Human)”. The game listens on UDP port 9999.
+Give the other player your IP address (use ipconfig in your cmd to see your IPV4 address).
+On the same Wi-Fi or network, your local IP is the one from hostname -I in a terminal (for example 192.168.1.20).
+Over the internet, use a VPN-style tool, which is the easiest option. Both players join the same virtual network (for example Tailscale, ZeroTier or Radmin VPN), and the host gives their virtual IP. The alternative is to forward UDP port 9999 on your router to your computer, then give the client your public IP.
+Make sure your firewall allows UDP 9999.
+
+### The client
+
+Type the host’s IP in the box (127.0.0.1 only works on the same computer) and click “Join (Mosquito)”.
+Wait for “Connected”, then wait for the host to press Play.
+
+You can test both sides on one computer: run two copies of the game, host in one and join 127.0.0.1 in the other.
+
+# About the game
 
 Hit That Moustique ! is a 2-player 2D game built in Godot 4.7. One player is the Human, who hunts with an electric racket and a flashlight. The other is the Mosquito, who tries to bite the Human before the timer runs out. The Human wins by zapping the mosquito once. The Mosquito wins by draining all 4 of the Human’s HP, or by surviving until the 120-second timer ends.
 
@@ -22,6 +39,8 @@ It starts an 8 s bite cooldown.
 A bite that misses only starts a 1 s cooldown, so you can’t spam clicks. The mosquito has 1 life.
 
 Collisions. The racket and the mosquito never collide with each other. The mosquito can fly over the human, and the human can swing the racket “behind” the mosquito. Only the overlap areas decide a hit or a miss. Both characters collide with the walls.
+
+# Interaction
 
 Vision.
 
@@ -40,7 +59,7 @@ Camera and map. The screen is 800×384 logical pixels. The left 640 px are the a
 
 Side panel. It shows the timer, then “YOUR STATS” and “ENEMY STATS”. Each has a heart with HP (or life for the mosquito), a cooldown bar (slap or bite), and a status (STUNNED, SPEED BOOST, SQUASHED). At the end, a window shows Victory or Defeat with the reason. A Credits window opens from the lobby.
 
-How the online part works :
+# Networking
 
 The online part uses Godot’s built-in high-level multiplayer: an ENetMultiplayerPeer (a UDP-based network library), RPCs, and multiplayer authority. It is a host-and-client model. Nothing external, such as a server program or a website, is needed.
 
@@ -62,42 +81,26 @@ If someone leaves, the other player gets a “The other player left the game” 
 
 Solo debug mode runs the same game with OfflineMultiplayerPeer, so there is no network. You play one character with one keyboard, TAB swaps the character, and R restarts. It uses the same code, which is why it behaves like the online game.
 
-How to connect
 
-The host
+# Code organization
 
-Open the game and click “Host (Human)”. The game listens on UDP port 9999.
-Give the other player your IP address.
-On the same Wi-Fi or network, your local IP is the one from hostname -I in a terminal (for example 192.168.1.20).
-Over the internet, use a VPN-style tool, which is the easiest option. Both players join the same virtual network (for example Tailscale, ZeroTier or Radmin VPN), and the host gives their virtual IP. The alternative is to forward UDP port 9999 on your router to your computer, then give the client your public IP.
-Make sure your firewall allows UDP 9999.
+## Game flow and network
 
-The client
-
-Type the host’s IP in the box (127.0.0.1 only works on the same computer) and click “Join (Mosquito)”.
-Wait for “Connected”, then wait for the host to press Play.
-
-You can test both sides on one computer: run two copies of the game, host in one and join 127.0.0.1 in the other.
-
-What each script does
-
-Game flow and network
-
-network.gd (autoload “Network”): creates the host and the client, tracks the number of players, knows who is the mosquito, starts the game scene for both, handles disconnections, and holds the debug-mode state. It is always loaded.
+- network.gd (autoload “Network”): creates the host and the client, tracks the number of players, knows who is the mosquito, starts the game scene for both, handles disconnections, and holds the debug-mode state. It is always loaded.
 lobby.gd: builds the main page in code: title, how-to-play window, connection window, solo test buttons, Music and Credits buttons. It enables Play only when two players are connected.
-game.gd: the controller of a match. It builds the walls and collision from the tilemap, sets up the camera, sets each player’s role and view (darkness, flashlight, sounds), and moves the camera. It receives bite and slap requests and sends the results to both players. It also drives the side panel and the end screen, and handles the debug keys (TAB, R, M).
-game_manager.gd: the rulebook (start/finish a match, timer, HP, cooldowns, stun, boost, who wins). Its tunable numbers, such as match length, HP and cooldowns, are at the top of the file. It runs only on the host (or in solo mode).
+- game.gd: the controller of a match. It builds the walls and collision from the tilemap, sets up the camera, sets each player’s role and view (darkness, flashlight, sounds), and moves the camera. It receives bite and slap requests and sends the results to both players. It also drives the side panel and the end screen, and handles the debug keys (TAB, R, M).
+- game_manager.gd: the rulebook (start/finish a match, timer, HP, cooldowns, stun, boost, who wins). Its tunable numbers, such as match length, HP and cooldowns, are at the top of the file. It runs only on the host (or in solo mode).
 
-Characters
+## Characters
 
-human.gd: the racket character. It handles walking, aiming, rotating the racket head and the flashlight, the slap request, the swing and hit animations, the hurt flash, the HP heart, the slap cooldown ring, and the “is this point inside my beam?” check.
-mosquito.gd: handles walking, speed boost, aiming and rotating, the bite request, the lunge animation, the dying animation, the always-on buzz sound, and the bite cooldown ring.
-cooldown_ring.gd: draws the small circular cooldown indicator over a character, in code.
-human_sensor.gd: draws the flickering red dot that shows the human to the mosquito player.
-map_walls.gd: draws the dark stone walls in all empty cells of the map.
+- human.gd: the racket character. It handles walking, aiming, rotating the racket head and the flashlight, the slap request, the swing and hit animations, the hurt flash, the HP heart, the slap cooldown ring, and the “is this point inside my beam?” check.
+- mosquito.gd: handles walking, speed boost, aiming and rotating, the bite request, the lunge animation, the dying animation, the always-on buzz sound, and the bite cooldown ring.
+- cooldown_ring.gd: draws the small circular cooldown indicator over a character, in code.
+- human_sensor.gd: draws the flickering red dot that shows the human to the mosquito player.
+- map_walls.gd: draws the dark stone walls in all empty cells of the map.
 
-Interface and sound
+## Interface and sound
 
-game_ui.gd: builds all the in-game interface in code: side panel with timer and stat windows, the “BITTEN!” / “ZAP!” messages, the damage flash, and the end window.
-ui_theme.gd: the one place that defines the look: the PixelifySans font, the racket-inspired color palette, and the style of windows, buttons, text fields and bars.
-audio_manager.gd (autoload “Sfx”): loads and plays all the sounds, automatically adds the click sound to every button, and controls the background music and its on/off toggle. It also creates the mosquito’s buzz player.
+- game_ui.gd: builds all the in-game interface in code: side panel with timer and stat windows, the “BITTEN!” / “ZAP!” messages, the damage flash, and the end window.
+- ui_theme.gd: the one place that defines the look: the PixelifySans font, the racket-inspired color palette, and the style of windows, buttons, text fields and bars.
+- audio_manager.gd (autoload “Sfx”): loads and plays all the sounds, automatically adds the click sound to every button, and controls the background music and its on/off toggle. It also creates the mosquito’s buzz player.
